@@ -1,5 +1,5 @@
 import { IEventEmitter } from "../types/core/EventEmitter";
-abstract class BaseView {
+export abstract class BaseView {
   protected container: HTMLElement;
   protected emitter: IEventEmitter;
 

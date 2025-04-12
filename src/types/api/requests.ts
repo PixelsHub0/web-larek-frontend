@@ -1,4 +1,4 @@
-export interface CreateOrderRequest {
+export interface ICreateOrderRequest {
   payment: string;
   email: string;
   phone: string;

@@ -1,5 +1,5 @@
 import { IEventEmitter } from "../types/core/EventEmitter";
-abstract class BaseModel<T> {
+export abstract class BaseModel<T> {
   protected state: T;
   protected emitter: IEventEmitter;
 

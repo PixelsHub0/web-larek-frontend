@@ -1,4 +1,4 @@
-export interface ApiProductResponse {
+export interface IApiProductResponse {
   id: string;
   title: string;
   price: number;
@@ -7,7 +7,7 @@ export interface ApiProductResponse {
   category: string;
 }
 
-export interface ApiOrderResponse {
+export interface IApiOrderResponse {
   id: string;
   total: number;
   items: {

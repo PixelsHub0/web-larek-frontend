@@ -1,10 +1,8 @@
-export interface CreateOrderRequest {
-  payment: string;
-  email: string;
-  phone: string;
-  address: string;
-  items: {
-    productId: string;
-    quantity: number;
-  }[];
+import { IApiProductResponse } from "./responses";
+import { ICreateOrderRequest } from "./requests";
+import { IApiOrderResponse } from "./responses";
+export interface IApiClient {
+  getProducts(): Promise<IApiProductResponse[]>;
+  createOrder(order: ICreateOrderRequest): Promise<IApiOrderResponse>;
+  getProduct(id: string): Promise<IApiProductResponse>;
 }
