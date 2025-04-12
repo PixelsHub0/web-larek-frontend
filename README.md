@@ -27,30 +27,48 @@ npm run start
 ## **Архитектура**
 ![UML Диаграмма проекта](src/images/8%20проктная%20работа%20Readme.png)
 ## **Структура проекта**
-```src/
-├── types/
-│   ├── api/          # Типы для работы с API
-│   │   ├── requests.ts
-│   │   ├── responses.ts
-│   │   └── client.ts
-│   ├── app/          # Типы приложения
-│   │   ├── product.ts
-│   │   ├── order.ts
-│   │   └── state.ts
-│   ├── events/       # Система событий
-│   │   ├── enum.ts
-│   │   └── payloads.ts
-│   └── core/         # Базовые интерфейсы
-│       ├── model.ts
-│       ├── view.ts
-│       └── presenter.ts
-├── core/             # Базовые реализации
-│   ├── EventEmitter.ts
-│   ├── Model.ts
-│   ├── View.ts
-│   └── Presenter.ts
-├── app.ts            # Инициализация приложения
-└── index.ts          # Точка входа
+```
+src/
+├── core/                  # Базовые абстрактные классы
+│   ├── EventEmitter.ts    # Реализация IEventEmitter
+│   ├── BaseModel.ts       # Абстрактный BaseModel<T>
+│   ├── BaseView.ts        # Абстрактный BaseView
+│   └── BasePresenter.ts   # Абстрактный BasePresenter
+│
+├── types/                 # Все типы и интерфейсы
+│   ├── api/               # Типы для работы с API
+│   │   ├── client.ts      # IApiClient
+│   │   ├── requests.ts    # ICreateOrderRequest
+│   │   └── responses.ts   # IApiProductResponse, IApiOrderResponse
+│   │
+│   ├── app/               # Типы приложения
+│   │   ├── product.ts     # IProduct
+│   │   ├── cart.ts        # ICartItem
+│   │   ├── order.ts       # IOrderForm, IOrder
+│   │   └── state.ts       # IAppState
+│   │
+│   └── events/            # Система событий
+│       ├── enum.ts        # AppEvents
+│       └── types.ts       # IEventMap, IEventEmitter
+│
+├── models/                # Конкретные реализации моделей
+│   ├── AppModel.ts        # Реализация модели приложения
+│   └── CartModel.ts       # Реализация модели корзины
+│
+├── presenters/            # Презентеры
+│   ├── AppPresenter.ts
+│   └── CartPresenter.ts
+│
+├── views/                 # Представления
+│   ├── AppView.ts
+│   ├── CartView.ts
+│   └── ProductView.ts
+│
+├── services/              # Сервисы
+│   └── ApiClient.ts       # Реализация IApiClient
+│
+├── app.ts                 # Инициализация приложения
+└── index.ts               # Точка входа
 ```
 
 **Проект реализован по паттерну MVP (Model-View-Presenter) с использованием системы событий для взаимодействия между компонентами.**
