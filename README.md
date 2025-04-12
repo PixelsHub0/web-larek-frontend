@@ -25,7 +25,7 @@ echo "API_ORIGIN=https://larek-api.nomoreparties.co" > .env
 npm run start
 ```
 ## **Архитектура**
-![src/images/8 проктная работа Readme.png](uml схема)
+![UML Диаграмма проекта](src/images/8%20проктная%20работа%20Readme.png)
 ## **Структура проекта**
 ```src/
 ├── types/
