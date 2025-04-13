@@ -16,10 +16,7 @@ HTTP-клиент: Fetch API
 # 1. Установите зависимости
 npm install
 ```
-```
-# 2. Создайте файл .env
-echo "API_ORIGIN=https://larek-api.nomoreparties.co" > .env
-```
+
 ```
 # 3. Запустите приложение
 npm run start
