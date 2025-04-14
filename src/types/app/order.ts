@@ -9,4 +9,6 @@ export interface IOrderForm {
 export interface IOrder extends IOrderForm {
   items: ICartItem[];
   total: number;
+  addItems(items: ICartItem[]): void;
+  validate(): boolean;
 }

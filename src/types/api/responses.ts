@@ -1,17 +1,13 @@
 export interface IApiProductResponse {
   id: string;
   title: string;
-  price: number;
+  price: number | null;
   description: string;
-  images: string[];
+  images: string;
   category: string;
 }
 
 export interface IApiOrderResponse {
-  id: string;
-  total: number;
-  items: {
-    productId: string;
-    quantity: number;
-  }[];
+  id: string;          
+  total: number;    
 }

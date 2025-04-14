@@ -1,10 +1,12 @@
 export interface ICreateOrderRequest {
-  payment: string;
+  payment: 'card' | 'cash';  
   email: string;
   phone: string;
   address: string;
+  total: number;
   items: {
-    productId: string;
-    quantity: number;
+    id: string;     
+    price: number;
+    count: number;  
   }[];
 }

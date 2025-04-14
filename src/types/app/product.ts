@@ -1,12 +1,7 @@
-export interface IProduct {
-  id: string;
-  title: string;
-  price: number;
-  image: string;
-  description?: string;
-}
-
+import { IApiProductResponse } from "../api/responses";
 export interface ICartItem {
-  product: IProduct;
-  quantity: number;
+  product: IApiProductResponse;
+  updateQuantity(newQuantity: number): void;
+  calculateTotal(): number;
+  validate(): boolean;
 }
