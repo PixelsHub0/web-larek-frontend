@@ -1,11 +1,12 @@
-import { ICartItem } from "../app/product";
-import { IProduct } from "../app/product"
-import { IOrder } from "../app/order";
-import { AppEvents } from "./enum";
+// payloads.ts
+export interface CatalogPayload {
+	catalog: unknown[];
+}
 
-export interface IEventMap {
-  [AppEvents.PRODUCTS_LOADED]: IProduct[];
-  [AppEvents.CART_UPDATED]: ICartItem[];
-  [AppEvents.ORDER_CREATED]: IOrder;
-  [AppEvents.ERROR_OCCURRED]: { message: string };
+export interface CartPayload {
+	ids: string[];
+}
+
+export interface OrderPayload {
+	form: Record<string, unknown>;
 }

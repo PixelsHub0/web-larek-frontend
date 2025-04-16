@@ -1,194 +1,180 @@
-# **Веб-приложение "Ларёк" - Документация архитектуры**
-## **Технологический стек**
-```Язык: TypeScript
+# Веб-приложение "Ларёк" — Архитектура
 
-Архитектура: MVP (Model-View-Presenter)
+##  Технологический стек
 
-Брокер событий: EventEmitter
+- Язык: TypeScript
+- Архитектура: MVP (Model-View-Presenter)
+- Событийная система: EventEmitter
+- HTTP-клиент: WebLarekAPI (на основе базового Api)
+- Сборка: Webpack
+- Типизация: интерфейсы, enum, дженерики
+- Разделение: base, components, types
 
-HTTP-клиент: Fetch API
+---
 
-Сборка: Webpack
-```
-## **Инструкция по запуску**
+##  Инструкция по запуску
 
 ```bash
 # 1. Установите зависимости
 npm install
-```
 
-```
-# 2. Запустите приложение
+# 3. Запустите приложение
 npm run start
 ```
-## **Архитектура**
-![UML Диаграмма проекта](src/images/8%20проктная%20работа%20Readme.png)
-## **Структура проекта**
+
+---
+
+## Архитектура
+
+Проект реализован по паттерну **MVP (Model-View-Presenter)**. Все взаимодействия между слоями происходят через `EventEmitter`, что обеспечивает слабое связывание компонентов и лёгкую масштабируемость.
+
+###  Основные слои:
+- **Model** — хранение состояния приложения (`AppState`)
+- **View** — отображение интерфейса (`Component<T>`, `ProductCardView`, `OrderFormView`, `PageView`)
+- **Presenter** — посредник, реагирует на события и обновляет модель и представление
+
+---
+
+##  Структура проекта
+
 ```
 src/
-├── core/                  # Базовые абстрактные классы
-│   ├── EventEmitter.ts    # Реализация IEventEmitter
-│   ├── BaseModel.ts       # Абстрактный BaseModel<T>
-│   ├── BaseView.ts        # Абстрактный BaseView
-│   └── BasePresenter.ts   # Абстрактный BasePresenter
+├── components/
+│   ├── base/             # Универсальные классы
+│   ├── common/           # Компоненты общего назначения (Modal, Form и т.п.)
+│   ├── pages/            # Презентеры (CatalogPresenter, OrderPagePresenter)
+│   ├── views/            # Классы отображения
+│   └── AppState.ts       # Централизованное хранилище состояния
 │
-├── types/                 # Все типы и интерфейсы
-│   ├── api/               # Типы для работы с API
-│   │   ├── client.ts      # IApiClient
-│   │   ├── requests.ts    # ICreateOrderRequest
-│   │   └── responses.ts   # IApiProductResponse, IApiOrderResponse
-│   │
-│   ├── app/               # Типы приложения
-│   │   ├── product.ts     # IProduct
-│   │   ├── cart.ts        # ICartItem
-│   │   ├── order.ts       # IOrderForm, IOrder
-│   │   └── state.ts       # IAppState
-│   │
-│   └── events/            # Система событий
-│       ├── enum.ts        # AppEvents
-│       └── types.ts       # IEventMap, IEventEmitter
+├── types/
+│   ├── api/              # Типы API (запросы, ответы)
+│   ├── events/           # События и их данные
+│   └── app/              # Типы данных приложения (Product, Order и т.п.)
 │
-├── models/                # Конкретные реализации моделей
-│   ├── AppModel.ts        # Реализация модели приложения
-│   └── CartModel.ts       # Реализация модели корзины
-│
-├── presenters/            # Презентеры
-│   ├── AppPresenter.ts
-│   └── CartPresenter.ts
-│
-├── views/                 # Представления
-│   ├── AppView.ts
-│   ├── CartView.ts
-│   └── ProductView.ts
-│
-├── services/              # Сервисы
-│   └── ApiClient.ts       # Реализация IApiClient
-│
-├── app.ts                 # Инициализация приложения
-└── index.ts               # Точка входа
+└── index.ts              # Инициализация приложения
 ```
 
-**Проект реализован по паттерну MVP (Model-View-Presenter) с использованием системы событий для взаимодействия между компонентами.**
+---
 
-### 1. Core компоненты
+##  Базовые классы
 
-#### EventEmitter
-**Назначение**: Базовый класс для реализации системы событий. Позволяет компонентам подписываться на события (`on`), отписываться (`off`) и генерировать события (`emit`).
+### `EventEmitter`
+Позволяет подписываться на события, отписываться и эмитить события.
 
-**Ключевые методы**:
-- `on(event, callback)` - подписка на событие
-- `off(event, callback)` - отписка от события
-- `emit(event, ...args)` - генерация события
+```ts
+on(event: string, callback: (...args: any[]) => void): void
+off(event: string, callback: (...args: any[]) => void): void
+emit(event: string, ...args: any[]): void
+```
 
-#### BaseModel
-**Назначение**: Абстрактный базовый класс для всех моделей. Хранит состояние приложения и уведомляет подписчиков об изменениях через EventEmitter.
+---
 
-**Ключевые методы**:
-- `getState()` - возвращает текущее состояние
-- `updateState(newState)` - обновляет часть состояния
+### `Component<T>`
+Абстрактный базовый класс для всех View-компонентов.
 
-#### BaseView
-**Назначение**: Абстрактный базовый класс для всех представлений. Отвечает за отображение данных и обработку пользовательских действий.
+```ts
+constructor(protected element: HTMLElement)
+render(data?: T): void
+getElement(): HTMLElement
+destroy(): void
+```
 
-**Ключевые методы**:
-- `render(data)` - отрисовывает представление с переданными данными
-- `bindEvents()` - настраивает обработчики событий (вызывается внутри render)
+---
 
-#### BasePresenter
-**Назначение**: Абстрактный базовый класс для всех презентеров. Координирует взаимодействие между Model и View.
+### `AppState`
+Централизованная модель состояния приложения.
 
-**Ключевые методы**:
-- `initialize()` - инициализирует компонент (загрузка данных, начальная настройка)
+```ts
+setCatalog(data: IProduct[]): void
+addToBasket(id: string): void
+updateOrder(data: Partial<IOrder>): void
+getState(): AppStateData
+```
 
-### 2. Data компоненты
+---
 
-#### Интерфейсы данных
+##  События
 
-**IApiClient**:
-```typescript
-interface IApiClient {
-  getProducts(): Promise<IApiProductResponse[]>;
-  createOrder(order: ICreateOrderRequest): Promise<IApiOrderResponse>;
-  getProduct(id: string): Promise<IApiProductResponse>;
+Определены в `AppEvent`:
+
+```ts
+enum AppEvent {
+  CATALOG_CHANGED = 'catalog:changed',
+  CART_CHANGED = 'cart:changed',
+  ORDER_UPDATED = 'order:updated',
+  ORDER_SUBMIT = 'order:submit',
+  ORDER_SUCCESS = 'order:success',
 }
 ```
-## **Основные модели данных:**
 
-- **IProduct - описание товара (id, название, цена, изображение и т.д.)**
+---
 
-- **ICartItem - товар в корзине (продукт + количество)**
+##  Взаимодействие компонентов
 
-- **IOrder - информация о заказе (платеж, контакты, адрес, товары)**
+### Загрузка каталога:
 
-- **IAppState - глобальное состояние приложения (товары, корзина, текущий заказ)**
+- `CatalogPresenter` вызывает `LarekAPI.getProducts()`
+- `AppState` сохраняет каталог и эмитит `CATALOG_CHANGED`
+- View обновляет отображение каталога
 
-### **3. Система событий**
-**Определены в AppEvents:**
+### Работа с корзиной:
 
-**PRODUCTS_LOADED** - товары загружены
+- Пользователь нажимает кнопку → `CART_ADD`
+- `AppState` обновляет корзину → `CART_CHANGED`
+- View обновляет корзину
 
-**CART_UPDATED** - корзина обновлена
+### Заказ:
 
-**ORDER_CREATED** - заказ создан
+- View → событие `ORDER_SUBMIT`
+- `OrderPagePresenter` → валидация, вызов `api.createOrder()`
+- При успехе → `ORDER_SUCCESS`, отображается подтверждение
 
-**ERROR_OCCURRED** - произошла ошибка
+---
 
-### **Взаимодействие компонентов**
-#### **Загрузка продуктов:**
+## 📘 Типы данных
 
-- **Presenter вызывает метод API через Model**
-
-- **Model получает данные и генерирует PRODUCTS_LOADED**
-
-- **Presenter обновляет View новыми данными**
-
-### **Работа с корзиной:**
-
-- **Пользовательские действия в View генерируют события**
-
-- **Presenter обновляет Model (корзину)**
-
-- **Model генерирует CART_UPDATED**
-
-- **Presenter обновляет View с новым состоянием корзины**
-
-### **Создание заказа:**
-
-- **View собирает данные формы**
-
-- **Presenter валидирует и передает в Model**
-
-- **Model отправляет заказ на сервер и генерирует ORDER_CREATED**
-
-- **Presenter обновляет View (подтверждение заказа)**
-## **Типы данных**
-#### **Основные интерфейсы данных:**
-```
-interface IProduct {
+```ts
+// src/types/api/responses.ts
+interface IApiProductResponse {
   id: string;
   title: string;
-  price: number;
+  price: number | null;
   image: string;
-  description?: string;
+  description: string;
+  category: string;
 }
 
-interface ICartItem {
-  product: IProduct;
-  quantity: number;
-}
-
-interface IOrder {
-  payment: string;
-  email: string;
-  phone: string;
-  address: string;
-  items: ICartItem[];
+interface IApiOrderResponse {
+  id: string;
   total: number;
 }
 
-interface IAppState {
-  products: IProduct[];
-  cart: ICartItem[];
-  currentOrder?: IOrder;
+// src/types/api/requests.ts
+interface ICreateOrderRequest {
+  payment: 'online' | 'cash';
+  email: string;
+  phone: string;
+  address: string;
+  total: number;
+  items: string[];
 }
 ```
+
+---
+
+##  Дополнительно
+
+- Типизация строгая, `any` не используется
+- Все компоненты изолированы и связаны через `EventEmitter`
+- Презентеры — точка управления страницей (каталог, заказ)
+- Модели и вью не зависят напрямую
+
+---
+
+##  UML-схема 
+
+![uml схема к проекту WebLarek](src/images/UmlLarek.png)
+
+---
+
+

@@ -1,6 +1,8 @@
-export enum AppEvents {
-  PRODUCTS_LOADED = 'products:loaded',
-  CART_UPDATED = 'cart:updated',
-  ORDER_CREATED = 'order:created',
-  ERROR_OCCURRED = 'error:occurred'
+// enum.ts
+export enum AppEvent {
+	CATALOG_CHANGED = 'catalog:changed',
+	CART_CHANGED = 'cart:changed',
+	ORDER_UPDATED = 'order:updated',
+	ORDER_SUBMIT = 'order:submit',
+	ORDER_SUCCESS = 'order:success',
 }

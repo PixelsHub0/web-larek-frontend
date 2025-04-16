@@ -3,7 +3,7 @@ export interface IApiProductResponse {
   title: string;
   price: number | null;
   description: string;
-  images: string;
+  image: string;
   category: string;
 }
 
