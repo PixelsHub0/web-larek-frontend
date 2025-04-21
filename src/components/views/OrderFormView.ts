@@ -1,11 +1,94 @@
-import { Component } from '../base/Component';
+// src/components/views/OrderFormView.ts
 
-export class OrderFormView extends Component<Record<string, unknown>> {
-	constructor(el: HTMLElement) {
-		super(el);
+import { Component } from '../base/Component';
+import { AppEvent } from '../../types';
+import { EventEmitter } from '../base/EventEmitter';
+import { FORM_ERRORS, PAYMENT_METHODS } from '../../utils/constants';
+
+export class OrderFormView extends Component {
+	private addressInput: HTMLInputElement;
+	private paymentButtons: NodeListOf<HTMLButtonElement>;
+	private submitButton: HTMLButtonElement;
+	private errorContainer: HTMLElement;
+
+	private payment: string | null = null;
+
+	constructor(protected element: HTMLFormElement, protected events: EventEmitter) {
+		super(element);
+
+		this.addressInput = this.element.querySelector('input[name="address"]')!;
+		this.paymentButtons = this.element.querySelectorAll('button[name]');
+		this.submitButton = this.element.querySelector('.order__button')!;
+		this.errorContainer = this.element.querySelector('.form__errors')!;
+
+		this.configure();
 	}
 
-	// структура, без реализации
-	public reset(): void {}
-}
+	private configure(): void {
+		// Выбор способа оплаты
+		this.paymentButtons.forEach(button => {
+			button.addEventListener('click', () => {
+				this.paymentButtons.forEach(b => b.classList.remove('button_alt-active'));
+				button.classList.add('button_alt-active');
+				this.payment = button.name;
+				this.validate();
+			});
+		});
 
+		// Ввод адреса
+		this.addressInput.addEventListener('input', () => {
+			this.validate();
+		});
+
+		// Сабмит
+		this.element.addEventListener('submit', (e) => {
+			e.preventDefault();
+			if (this.validate()) {
+				console.log('📦 OrderFormView — отправка:', {
+					address: this.addressInput.value,
+					payment: this.payment,
+				});
+				this.events.emit(AppEvent.ORDER_UPDATED, {
+					address: this.addressInput.value,
+					payment: this.payment,
+				});
+				this.events.emit(AppEvent.ORDER_CONTACTS_REQUIRED);
+			}
+		});
+	}
+
+	/**
+	 * Проверка валидности полей формы.
+	 * Показывает/скрывает ошибки и включает кнопку отправки.
+	 */
+	private validate(): boolean {
+		const address = this.addressInput.value.trim();
+		const isValid = address.length > 0 && !!this.payment;
+
+		this.submitButton.disabled = !isValid;
+
+		if (!address) {
+			this.showError(FORM_ERRORS.addressRequired);
+		} else {
+			this.clearError();
+		}
+
+		return isValid;
+	}
+
+	public reset(): void {
+		this.addressInput.value = '';
+		this.payment = null;
+		this.submitButton.disabled = true;
+		this.paymentButtons.forEach(btn => btn.classList.remove('button_alt-active'));
+		this.clearError();
+	}
+
+	private showError(message: string): void {
+		this.errorContainer.textContent = message;
+	}
+
+	private clearError(): void {
+		this.errorContainer.textContent = '';
+	}
+}

@@ -1,11 +1,13 @@
-// AppState.ts
+// src/base/views/AppState.ts
 import { EventEmitter } from './base/EventEmitter';
-import { AppEvent } from '../types/events/enum';
+import { AppEvent } from '../types';
+import { IApiProductResponse } from '../types';
+import { ICreateOrderRequest } from '../types';
 
 interface AppStateData {
-	catalog: unknown[];
+	catalog: IApiProductResponse[];
 	basket: string[];
-	order: Record<string, unknown>;
+	order: Partial<ICreateOrderRequest>;
 }
 
 export class AppState {
@@ -17,22 +19,66 @@ export class AppState {
 
 	constructor(private events: EventEmitter) {}
 
+	public clearBasket(): void {
+		this.state.basket = [];
+		this.events.emit(AppEvent.CART_CHANGED, this.state.basket);
+	}
+
 	public getState(): AppStateData {
 		return this.state;
 	}
 
-	public setCatalog(data: unknown[]): void {
+	public setCatalog(data: IApiProductResponse[]): void {
 		this.state.catalog = data;
 		this.events.emit(AppEvent.CATALOG_CHANGED, data);
 	}
 
 	public addToBasket(id: string): void {
-		this.state.basket.push(id);
+		if (!this.state.basket.includes(id)) {
+			this.state.basket.push(id);
+			this.events.emit(AppEvent.CART_CHANGED, this.state.basket);
+		}
+	}
+
+	public removeFromBasket(id: string): void {
+		this.state.basket = this.state.basket.filter(itemId => itemId !== id);
 		this.events.emit(AppEvent.CART_CHANGED, this.state.basket);
 	}
 
-	public updateOrder(data: Record<string, unknown>): void {
-		this.state.order = { ...this.state.order, ...data };
-		this.events.emit(AppEvent.ORDER_UPDATED, this.state.order);
+	private getTotal(): number {
+		return this.state.basket.reduce((sum, id) => {
+			const product = this.state.catalog.find(p => p.id === id);
+			return sum + (product?.price ?? 0);
+		}, 0);
 	}
+
+	public updateOrder(data: Record<string, unknown>): void {
+		console.log('📥 AppState.updateOrder — входящие данные:', data);
+		console.log('📦 Текущее состояние order до обновления:', this.state.order);
+	this.state.order = {
+		...this.state.order, // 🔁 сохраняем предыдущие данные
+		...data,             // 🔄 дописываем новые
+	};
+
+	// 🎯 Только если ВСЕ нужные поля есть — добавляем товары и сумму
+	if (
+		this.state.order.address &&
+		this.state.order.payment &&
+		this.state.order.email &&
+		this.state.order.phone
+	) {
+		this.state.order.items = this.state.basket;
+		this.state.order.total = this.getTotal();
+	}
+
+	console.log('✅ AppState.updateOrder — новое состояние order:', this.state.order);
+	this.events.emit(AppEvent.ORDER_UPDATED, this.state.order);
+}
+
+
+
+	public resetOrder(): void {
+	console.log('🧼 AppState.resetOrder() вызван!');
+	this.state.order = {};
+}
 }

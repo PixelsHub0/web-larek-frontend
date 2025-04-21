@@ -18,4 +18,8 @@ export abstract class Component<T = object> {
 	public destroy(): void {
 		this.element.remove();
 	}
+
+	protected setText(element: HTMLElement, value: unknown): void {
+		element.textContent = String(value);
+	}
 }
