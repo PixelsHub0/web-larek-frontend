@@ -52,30 +52,26 @@ export class AppState {
 		}, 0);
 	}
 
-	public updateOrder(data: Record<string, unknown>): void {
-		console.log('📥 AppState.updateOrder — входящие данные:', data);
-		console.log('📦 Текущее состояние order до обновления:', this.state.order);
-	this.state.order = {
-		...this.state.order, // 🔁 сохраняем предыдущие данные
-		...data,             // 🔄 дописываем новые
-	};
+	 public updateOrder(data: Record<string, unknown>): void {
+     // 🔥 Обновляем поля формы
+     this.state.order = {
+         ...this.state.order,
+         ...data,
+     };
 
-	// 🎯 Только если ВСЕ нужные поля есть — добавляем товары и сумму
-	if (
-		this.state.order.address &&
-		this.state.order.payment &&
-		this.state.order.email &&
-		this.state.order.phone
-	) {
-		this.state.order.items = this.state.basket;
-		this.state.order.total = this.getTotal();
-	}
+     // 🎯 Обновляем итог и товары каждый раз перед отправкой заказа
+     if (
+         this.state.order.address &&
+         this.state.order.payment &&
+         this.state.order.email &&
+         this.state.order.phone
+     ) {
+         this.state.order.items = this.state.basket;
+         this.state.order.total = this.getTotal();
+     }
 
-	console.log('✅ AppState.updateOrder — новое состояние order:', this.state.order);
-	this.events.emit(AppEvent.ORDER_UPDATED, this.state.order);
-}
-
-
+     console.log('✅ AppState.updateOrder — новое состояние order:', this.state.order);
+ }
 
 	public resetOrder(): void {
 	console.log('🧼 AppState.resetOrder() вызван!');

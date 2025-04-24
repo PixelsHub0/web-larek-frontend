@@ -4,11 +4,13 @@
 .modal {
   @include mixins.sublayer;
   // height: max-content;
-  position: absolute;
+  position: fixed;
   display: none;
   justify-content: center;
+  align-items: center;
   background-color: $overlayBackground;
   z-index: 100;
+  inset: 0;
   padding-top: 5vh;
   padding-bottom: 5vh;
   box-sizing: border-box;
@@ -26,6 +28,8 @@
     border-radius: 3rem;
     box-sizing: border-box;
     position: relative;
+    max-height: 80vh; // или другая удобная высота
+    overflow-y: auto;
   }
 
   &__content {

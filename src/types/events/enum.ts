@@ -9,4 +9,6 @@ export enum AppEvent {
 	ORDER_REMOVE_PRODUCT = 'order:remove-product',
 	ORDER_DELIVERY_REQUIRED = 'order:delivery-required',
 	ORDER_CONTACTS_REQUIRED = 'order:contacts-required',
+	PRODUCT_PREVIEW = 'product:preview',
+	PRODUCT_PREVIEW_OPEN = 'product:preview-open'
 }

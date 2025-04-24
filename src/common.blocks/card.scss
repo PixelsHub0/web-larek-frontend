@@ -3,6 +3,8 @@
 
 .card {
   @include mixins.flex(column);
+  align-items: center;
+  max-width: 648px;
   border: 0;
   border-radius: $defaultBorderRadius;
   background-color: $primary;
@@ -32,6 +34,7 @@
   &__column {
     @include mixins.flex(column);
     align-items: flex-start;
+    position: relative
   }
 
   &__row {
@@ -83,4 +86,17 @@
   &__price {
 
   }
+
+  .card__image-container {
+  position: relative;
+}
+
+.card__category {
+  position: in;
+  top: 1rem;
+  left: 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
 }

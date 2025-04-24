@@ -37,6 +37,7 @@ export class Modal extends Component {
 	 */
 	public open(): void {
 		this.element.classList.add('modal_active');
+		//document.body.style.overflow = 'hidden'; // 🚫 Отключаем скролл
 	}
 
 	/**
@@ -44,5 +45,6 @@ export class Modal extends Component {
 	 */
 	public close(): void {
 		this.element.classList.remove('modal_active');
+		document.body.style.overflow = ''; // ✅ Возвращаем скролл
 	}
 }
