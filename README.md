@@ -1,180 +1,151 @@
-# Веб-приложение "Ларёк" — Архитектура
+# Проектная работа "Web-Ларёк"
 
-##  Технологический стек
+### 📦 Стек: TypeScript, HTML, SCSS, Webpack, MVP
 
-- Язык: TypeScript
-- Архитектура: MVP (Model-View-Presenter)
-- Событийная система: EventEmitter
-- HTTP-клиент: WebLarekAPI (на основе базового Api)
-- Сборка: Webpack
-- Типизация: интерфейсы, enum, дженерики
-- Разделение: base, components, types
-
----
-
-##  Инструкция по запуску
+## 🔧 Установка и запуск проекта
 
 ```bash
-# 1. Установите зависимости
+# Установка зависимостей
 npm install
 
-# 3. Запустите приложение
+# Запуск проекта в режиме разработки
 npm run start
+
+# Сборка проекта
+npm run build
 ```
+## **Структура проекта**
+```
+src/ — исходные файлы проекта
 
----
+components/ — компоненты приложения
 
-## Архитектура
+base/ — базовые классы: Component, EventEmitter
 
-Проект реализован по паттерну **MVP (Model-View-Presenter)**. Все взаимодействия между слоями происходят через `EventEmitter`, что обеспечивает слабое связывание компонентов и лёгкую масштабируемость.
+views/ — компоненты отображения (View)
 
-###  Основные слои:
-- **Model** — хранение состояния приложения (`AppState`)
-- **View** — отображение интерфейса (`Component<T>`, `ProductCardView`, `OrderFormView`, `PageView`)
-- **Presenter** — посредник, реагирует на события и обновляет модель и представление
+common/ — переиспользуемые компоненты, формы, корзина и пр.
 
----
+types/ — типы данных, интерфейсы, перечисления
 
-##  Структура проекта
+utils/ — утилиты и константы
+
+index.ts — точка входа приложения
+
+scss/ — стили
+
+public/index.html — основной HTML
+
+README.md — описание проекта
+```
+## **Архитектура проекта**
+**Проект реализован по архитектурному паттерну MVP (Model–View–Presenter).**
+
+### **Model:**
+**- AppState — централизованное состояние приложения, хранит каталог, корзину, заказ**
+
+**- LarekAPI — взаимодействие с сервером (API)**
+
+**- Типы: IApiProductResponse, ICreateOrderRequest, IOrderResult**
+
+### **View :**
+#### **Компоненты, которые отвечают за отрисовку и DOM-логику:**
+
+**- CatalogView — отображение каталога товаров**
+
+**- ProductPreviewView — модальное окно с описанием товара**
+
+**- Basket — корзина с товарами**
+
+**- FormView, OrderContactsFormView, OrderDeliveryFormView — формы**
+
+**- Modal — универсальное модальное окно**
+
+**- SuccessOrderView — окно успешного оформления**
+
+**- PageView — управление основными блоками страницы**
+
+### **Presenter (Управляющий слой)**
+**- EventEmitter — брокер событий, обеспечивает слабую связанность между модулями**
+
+**- index.ts — связывает все слои**
+### **Компоненты и назначение**
+| Компонент               | Назначение                                  |
+|-------------------------|---------------------------------------------|
+| `AppState`              | Управление состоянием и логикой приложения |
+| `Modal`                 | Модальное окно                              |
+| `CatalogView`           | Рендер карточек товаров                     |
+| `ProductPreviewView`    | Модальное окно карточки товара              |
+| `Basket`                | Рендер списка товаров в корзине             |
+| `OrderDeliveryFormView` | Форма доставки                              |
+| `OrderContactsFormView` | Форма контактов                             |
+| `FormView`              | Управление общей логикой форм               |
+| `SuccessOrderView`      | Сообщение об успешной оплате                |
+
+### **Типы данных**
 
 ```
-src/
-├── components/
-│   ├── base/             # Универсальные классы
-│   ├── common/           # Компоненты общего назначения (Modal, Form и т.п.)
-│   ├── pages/            # Презентеры (CatalogPresenter, OrderPagePresenter)
-│   ├── views/            # Классы отображения
-│   └── AppState.ts       # Централизованное хранилище состояния
-│
-├── types/
-│   ├── api/              # Типы API (запросы, ответы)
-│   ├── events/           # События и их данные
-│   └── app/              # Типы данных приложения (Product, Order и т.п.)
-│
-└── index.ts              # Инициализация приложения
-```
-
----
-
-##  Базовые классы
-
-### `EventEmitter`
-Позволяет подписываться на события, отписываться и эмитить события.
-
-```ts
-on(event: string, callback: (...args: any[]) => void): void
-off(event: string, callback: (...args: any[]) => void): void
-emit(event: string, ...args: any[]): void
-```
-
----
-
-### `Component<T>`
-Абстрактный базовый класс для всех View-компонентов.
-
-```ts
-constructor(protected element: HTMLElement)
-render(data?: T): void
-getElement(): HTMLElement
-destroy(): void
-```
-
----
-
-### `AppState`
-Централизованная модель состояния приложения.
-
-```ts
-setCatalog(data: IProduct[]): void
-addToBasket(id: string): void
-updateOrder(data: Partial<IOrder>): void
-getState(): AppStateData
-```
-
----
-
-##  События
-
-Определены в `AppEvent`:
-
-```ts
-enum AppEvent {
-  CATALOG_CHANGED = 'catalog:changed',
-  CART_CHANGED = 'cart:changed',
-  ORDER_UPDATED = 'order:updated',
-  ORDER_SUBMIT = 'order:submit',
-  ORDER_SUCCESS = 'order:success',
-}
-```
-
----
-
-##  Взаимодействие компонентов
-
-### Загрузка каталога:
-
-- `CatalogPresenter` вызывает `LarekAPI.getProducts()`
-- `AppState` сохраняет каталог и эмитит `CATALOG_CHANGED`
-- View обновляет отображение каталога
-
-### Работа с корзиной:
-
-- Пользователь нажимает кнопку → `CART_ADD`
-- `AppState` обновляет корзину → `CART_CHANGED`
-- View обновляет корзину
-
-### Заказ:
-
-- View → событие `ORDER_SUBMIT`
-- `OrderPagePresenter` → валидация, вызов `api.createOrder()`
-- При успехе → `ORDER_SUCCESS`, отображается подтверждение
-
----
-
-## 📘 Типы данных
-
-```ts
-// src/types/api/responses.ts
-interface IApiProductResponse {
+export interface IApiProductResponse {
   id: string;
   title: string;
-  price: number | null;
-  image: string;
   description: string;
+  image: string;
   category: string;
+  price: number | null;
 }
 
-interface IApiOrderResponse {
-  id: string;
-  total: number;
-}
-
-// src/types/api/requests.ts
-interface ICreateOrderRequest {
+export interface ICreateOrderRequest {
   payment: 'online' | 'cash';
+  address: string;
   email: string;
   phone: string;
-  address: string;
   total: number;
   items: string[];
 }
+
+export interface IOrderResult {
+  id: string;
+  total: number;
+}
+
 ```
 
----
+### **Описание взаимодействий**
+#### **1.При загрузке:**
 
-##  Дополнительно
+- **Загружается каталог через LarekAPI**
 
-- Типизация строгая, `any` не используется
-- Все компоненты изолированы и связаны через `EventEmitter`
-- Презентеры — точка управления страницей (каталог, заказ)
-- Модели и вью не зависят напрямую
+- **Данные передаются в AppState**
 
----
+- **Через событие CATALOG_CHANGED обновляется CatalogView**
 
-##  UML-схема 
+#### **2.При клике на карточку:**
 
-![uml схема к проекту WebLarek](src/images/UmlLarek.png)
+- **Срабатывает событие PRODUCT_PREVIEW_OPEN**
 
----
+- **ProductPreviewView открывается с деталями товара**
 
+#### **3.При добавлении товара:**
 
+- **Событие ORDER_ADD_PRODUCT обновляет AppState**
+
+- **CART_CHANGED вызывает обновление корзины и счётчика**
+
+#### **4.При оформлении заказа:**
+
+- **Форма разбита на 2 шага (доставка и контакты)**
+
+- **После валидации отправляется запрос POST через LarekAPI**
+
+- **Открывается окно успешного оформления**
+
+### **Используемые паттерны**
+- **MVP — Model-View-Presenter**
+
+- **ventEmitter (брокер событий) — для слабой связанности**
+
+- **Композиция вместо наследования в представлении**
+
+- **Единая точка входа (index.ts) — для инициализации всех связей**
+## **Uml схема**
+![uml схема проекта](src/images/uml_weblarek.png)
