@@ -36,7 +36,7 @@ export class OrderPagePresenter {
       this.state.clearBasket();
       this.state.resetOrder();
 
-      this.success.setMessage(`Заказ №${response.id} оформлен на сумму ${response.total} синапсов`);
+      this.success.setMessage(`Списано ${response.total} синапсов`);
       this.modal.setContent(this.success.getElement());
       this.modal.open();
 

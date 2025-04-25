@@ -1,4 +1,5 @@
 // src/components/views/CatalogView.ts
+
 import { Component } from '../base/Component';
 import { IApiProductResponse } from '../../types/api/responses';
 import { AppEvent } from '../../types/events/enum';
@@ -23,36 +24,24 @@ export class CatalogView extends Component {
   }
 
   protected createCard(product: IApiProductResponse): HTMLElement {
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.dataset.id = product.id;
+	const template = document.getElementById('card-catalog') as HTMLTemplateElement;
+	const card = template.content.firstElementChild!.cloneNode(true) as HTMLElement;
 
-    const categoryClass = categoryMapping[product.category] || 'card__category_other';
+	card.dataset.id = product.id;
 
-    card.innerHTML = `
-      <div class="card__column">
-        <span class="card__category ${categoryClass}">${product.category}</span>
-        <h3 class="card__title">${product.title}</h3>
-        <img src="${CDN_URL}${product.image}" class="card__image" />
-        <p class="card__price">${product.price ? `${product.price} синапсов` : 'Бесценно'}</p>
-        <button class="card__button" ${product.price ? '' : 'disabled'}>
-          ${product.price ? 'Купить' : 'Нет в наличии'}
-        </button>
-      </div>
-    `;
+	(card.querySelector('.card__category') as HTMLElement).textContent = product.category;
+	(card.querySelector('.card__category') as HTMLElement).classList.add(categoryMapping[product.category] || 'card__category_other');
 
-    const button = card.querySelector('.card__button') as HTMLButtonElement;
-    button.addEventListener('click', (event) => {
-      event.stopPropagation();
-      if (product.price) {
-        this.events.emit(AppEvent.ORDER_ADD_PRODUCT, product.id);
-      }
-    });
+	(card.querySelector('.card__title') as HTMLElement).textContent = product.title;
+	(card.querySelector('.card__image') as HTMLImageElement).src = `${CDN_URL}${product.image}`;
+	(card.querySelector('.card__price') as HTMLElement).textContent = product.price ? `${product.price} синапсов` : 'Бесценно';
 
-    card.addEventListener('click', () => {
-      this.events.emit(AppEvent.PRODUCT_PREVIEW_OPEN, product.id);
-    });
+	card.addEventListener('click', () => {
+		this.events.emit(AppEvent.PRODUCT_PREVIEW_OPEN, product.id);
+	});
 
-    return card;
-  }
+	return card;
+}
+
+  
 }

@@ -55,7 +55,7 @@ const success = new Success(successElement);
 const basket = new Basket(basketElement);
 const orderForm = new OrderFormView(orderElement, emitter);
 const contactForm = new ContactFormView(contactsElement, emitter);
-const productPreviewView = new ProductPreviewView(previewTemplate, emitter);
+const productPreviewView = new ProductPreviewView(previewTemplate, emitter, state);
 
 // ─── Презентеры ────────────────────────────────────────
 new CatalogPresenter(emitter, state, catalogView);

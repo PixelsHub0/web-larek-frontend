@@ -2,15 +2,19 @@
 
 import { Component } from '../base/Component';
 import { IApiProductResponse } from '../../types/api/responses';
-import { CDN_URL } from '../../utils/constants';
+import { CDN_URL, categoryMapping } from '../../utils/constants';
 import { AppEvent } from '../../types';
 import { EventEmitter } from '../base/EventEmitter';
-import { categoryMapping } from '../../utils/constants';
+import { AppState } from '../AppState'; // ← Добавили импорт AppState
 
 export class ProductPreviewView extends Component {
   protected template: HTMLTemplateElement;
 
-  constructor(template: HTMLTemplateElement, private events: EventEmitter) {
+  constructor(
+    template: HTMLTemplateElement,
+    private events: EventEmitter,
+    private state: AppState // ← Добавили AppState
+  ) {
     super(template.content.firstElementChild!.cloneNode(true) as HTMLElement);
     this.template = template;
   }
@@ -29,22 +33,34 @@ export class ProductPreviewView extends Component {
     img.alt = product.title;
     title.textContent = product.title;
     description.textContent = product.description;
-      price.textContent = `${product.price ?? 'Бесценно'} синапсов`;
-      category.textContent = product.category;
+    price.textContent = `${product.price ?? 'Бесценно'} синапсов`;
+    category.textContent = product.category;
     category.className = `card__category ${categoryMapping[product.category] ?? ''}`;
 
+    const updateButton = () => {
+      const inCart = this.state.getState().basket.includes(product.id);
+      buyButton.textContent = inCart ? 'Удалить из корзины' : 'В корзину';
+    };
 
+    // Начальное состояние кнопки
     if (product.price === null) {
-      // Заблокировать кнопку, если товар без цены
       buyButton.disabled = true;
       buyButton.textContent = 'Нет в наличии';
     } else {
-      buyButton.textContent = 'В корзину';
-      buyButton.addEventListener('click', (e) => {
-        e.stopPropagation(); // чтобы не сработал клик по карточке
-        console.log('🛒 Клик по кнопке "в корзину" из модального окна:', product.id);
-        this.events.emit(AppEvent.ORDER_ADD_PRODUCT, product.id);
-      });
+      updateButton();
+      buyButton.onclick = (e) => {
+        e.stopPropagation();
+        const inCart = this.state.getState().basket.includes(product.id);
+
+        if (inCart) {
+          this.events.emit(AppEvent.ORDER_REMOVE_PRODUCT, product.id);
+        } else {
+          this.events.emit(AppEvent.ORDER_ADD_PRODUCT, product.id);
+        }
+
+        // Мгновенное обновление текста кнопки
+        updateButton();
+      };
     }
 
     return preview;
