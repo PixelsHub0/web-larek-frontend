@@ -14,7 +14,6 @@ export class Modal extends Component {
 		super(el);
 		this.content = el.querySelector('.modal__content') as HTMLElement;
 		this.closeButton = el.querySelector('.modal__close') as HTMLElement;
-
 		this.closeButton.addEventListener('click', () => this.close());
 		this.element.addEventListener('click', (e: MouseEvent) => {
 			if (e.target === this.element) {
@@ -37,7 +36,6 @@ export class Modal extends Component {
 	 */
 	public open(): void {
 		this.element.classList.add('modal_active');
-		//document.body.style.overflow = 'hidden'; // 🚫 Отключаем скролл
 	}
 
 	/**
@@ -45,6 +43,6 @@ export class Modal extends Component {
 	 */
 	public close(): void {
 		this.element.classList.remove('modal_active');
-		document.body.style.overflow = ''; // ✅ Возвращаем скролл
+		document.body.style.overflow = '';
 	}
 }

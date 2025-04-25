@@ -14,10 +14,6 @@ export class Basket extends Component {
 		// Найдём элементы списка и итоговой цены
 		this.list = this.element.querySelector('.basket__list') as HTMLElement;
 		this.totalElement = this.element.querySelector('.basket__price') as HTMLElement;
-
-		if (!this.list || !this.totalElement) {
-			throw new Error('Basket: не найдены элементы .basket__list или .basket__price');
-		}
 	}
 
 	/**

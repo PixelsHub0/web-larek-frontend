@@ -43,13 +43,3 @@ protected abstract emitState(): void :
 	protected abstract emitState(): void;
 }
 
-/*
-✅ ИТОГ: Класс Model<T>
-
-Метод / Поле	Назначение
-state: T	Хранит данные модели
-getState()	Вернуть текущие данные
-setState()	Частично обновить и вызвать emitState()
-emitState()	(абстрактный) метод, который обязан реализовать потомок
-events: EventEmitter	Механизм связи с другими частями системы
-*/

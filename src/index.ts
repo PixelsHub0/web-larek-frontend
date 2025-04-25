@@ -24,7 +24,6 @@ const api = new LarekAPI(API_URL);
 
 // ─── Обновление заказа ───────────────────────────────
 emitter.on(AppEvent.ORDER_UPDATED, (data: Record<string, unknown>) => {
-  console.log('🔄 ORDER_UPDATED payload:', data);
   state.updateOrder(data);
 });
 
@@ -115,7 +114,7 @@ emitter.on(AppEvent.PRODUCT_PREVIEW_OPEN, (productId: string) => {
     });
 });
 
-// ✅ Очищаем корзину после успешного заказа
+// Очищаем корзину после успешного заказа
 emitter.on(AppEvent.ORDER_SUCCESS, () => {
   renderBasket();  // очистка интерфейса
   updateCounter(); // обновление счётчика
@@ -157,7 +156,7 @@ function renderBasket(): void {
 
 
 
-// ─── Обновление счётчика ─────────────────────────────
+// ─── Обновление счётчика числа товаров в корзине ─────────────────────────────
 function updateCounter(): void {
   const counter = document.querySelector('.header__basket-counter') as HTMLElement;
   counter.textContent = String(state.getState().basket.length);

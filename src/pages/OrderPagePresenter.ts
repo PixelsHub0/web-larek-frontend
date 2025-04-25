@@ -9,6 +9,12 @@ import { Success } from '../components/common/Success';
 import { ICreateOrderRequest } from '../types';
 import { IApiOrderResponse } from '../types';
 
+/**
+ * OrderPagePresenter
+ * Отвечает за отправку заказа, отображение окна успешной оплаты
+ * и очистку состояния после оформления заказа.
+ */
+
 export class OrderPagePresenter {
   constructor(
     private state: AppState,
@@ -19,17 +25,22 @@ export class OrderPagePresenter {
   ) {
     this.subscribe();
   }
+  /**
+   * Подписка на событие отправки заказа
+   */
 
   private subscribe(): void {
     // Восстанавливаем прямую подписку на ORDER_SUBMIT
     this.events.on(AppEvent.ORDER_SUBMIT, this.handleSubmit.bind(this));
   }
-	
+
+	  /**
+   * Обработчик отправки заказа
+   */
+
 	private handleSubmit(): void {
-  const order = this.state.getState().order as ICreateOrderRequest;
-
-  console.log('📦 Финальные данные перед отправкой:', JSON.stringify(order, null, 2));
-
+    const order = this.state.getState().order as ICreateOrderRequest;
+    
   this.api
     .createOrder(order)
     .then((response: IApiOrderResponse) => {
@@ -40,7 +51,7 @@ export class OrderPagePresenter {
       this.modal.setContent(this.success.getElement());
       this.modal.open();
 
-      // 👉 Добавляем обработчик кнопки "За новыми покупками!"
+      // Добавляем обработчик кнопки "За новыми покупками!"
       const continueBtn = this.success.getElement().querySelector('.order-success__close') as HTMLButtonElement;
       if (continueBtn) {
         continueBtn.addEventListener('click', () => {
@@ -51,7 +62,6 @@ export class OrderPagePresenter {
       this.events.emit(AppEvent.ORDER_SUCCESS, response);
     })
     .catch(error => {
-      console.error('🚨 Ошибка при оформлении заказа:', error);
       alert('Произошла ошибка при оформлении заказа. Попробуйте ещё раз.');
     });
 }
