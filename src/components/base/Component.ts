@@ -60,4 +60,34 @@ export abstract class Component<T = object> {
 	protected setText(element: HTMLElement, value: unknown): void {
 		element.textContent = String(value);
 	}
+
+	/**
+	 * Переключает наличие CSS-класса на элементе
+	 * @param element Элемент, которому меняем класс
+	 * @param className Класс, который нужно добавить или убрать
+	 * @param force true — добавить класс, false — убрать
+	 */
+	protected toggleClass(element: HTMLElement, className: string, force: boolean): void {
+		element.classList.toggle(className, force);
+	}
+
+	/**
+	 * Делает элемент активным или неактивным (disabled).
+	 * @param element Элемент (кнопка или поле)
+	 * @param isDisabled Нужно ли задизейблить элемент
+	 */
+	protected setDisabled(element: HTMLElement, isDisabled: boolean): void {
+		(element as HTMLButtonElement | HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement).disabled = isDisabled;
+	}
+
+	/**
+ 	* Устанавливает src и alt для тега <img>.
+ 	* @param element HTMLImageElement
+	 * @param src      URL картинки
+ 	* @param alt      Alt-текст
+ 	*/
+	protected setImage(element: HTMLImageElement, src: string, alt: string): void {
+  	element.src = src;
+  	element.alt = alt;
+	}
 }

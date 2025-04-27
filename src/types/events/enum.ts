@@ -63,5 +63,10 @@ export enum AppEvent {
 	/**
 	 * Событие: открыто модальное окно предпросмотра товара.
 	 */
-	PRODUCT_PREVIEW_OPEN = 'product:preview-open'
+	PRODUCT_PREVIEW_OPEN = 'product:preview-open',
+	/**
+    * Событие: модель ответила результатом валидации полей заказа.
+    * Передаёт { isValid: boolean; errors: Record<string, string> }.
+    */
+	ORDER_FORM_VALIDITY_CHANGED = 'order:form-validity-changed'
 }

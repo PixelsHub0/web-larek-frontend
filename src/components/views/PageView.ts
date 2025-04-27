@@ -1,34 +1,42 @@
+// src/components/views/PageView.ts
+
 import { Component } from '../base/Component';
+import { ensureElement } from '../../utils/utils';
 
 /**
  * PageView — основной контейнер приложения. 
  * Управляет тем, какие компоненты рендерятся на странице.
  */
 export class PageView extends Component {
-	constructor(el: HTMLElement) {
-		super(el);
-	}
+  private catalogContainer: HTMLElement;
+  private formContainer: HTMLElement;
 
-	/**
-	 * Добавляет каталог в DOM
-	 */
-	public setCatalog(catalogEl: HTMLElement): void {
-		const catalogContainer = this.getElement().querySelector('.catalog');
-		catalogContainer?.replaceWith(catalogEl);
-	}
+  constructor(el: HTMLElement) {
+    super(el);
 
-	/**
-	 * Добавляет форму заказа
-	 */
-	public setForm(formEl: HTMLElement): void {
-		const formContainer = this.getElement().querySelector('.order');
-		formContainer?.replaceWith(formEl);
-	}
+    // Кэшируем контейнеры через ensureElement
+    this.catalogContainer = ensureElement<HTMLElement>('.catalog', this.element);
+    this.formContainer    = ensureElement<HTMLElement>('.order',   this.element);
+  }
 
-	/**
-	 * Добавляет модальное окно (внутрь body или wrapper)
-	 */
-	public setModal(modalEl: HTMLElement): void {
-		document.body.appendChild(modalEl);
-	}
+  /**
+   * Добавляет каталог в DOM
+   */
+  public setCatalog(catalogEl: HTMLElement): void {
+    this.catalogContainer.replaceWith(catalogEl);
+  }
+
+  /**
+   * Добавляет форму заказа
+   */
+  public setForm(formEl: HTMLElement): void {
+    this.formContainer.replaceWith(formEl);
+  }
+
+  /**
+   * Добавляет модальное окно (внутрь body или wrapper)
+   */
+  public setModal(modalEl: HTMLElement): void {
+    document.body.appendChild(modalEl);
+  }
 }

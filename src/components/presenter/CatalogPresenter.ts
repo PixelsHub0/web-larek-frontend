@@ -1,8 +1,8 @@
-import { AppState } from '../components/AppState';
-import { EventEmitter } from '../components/base/EventEmitter';
-import { CatalogView } from '../components/views/CatalogView';
-import { AppEvent } from '../types/index';
-import { IApiProductResponse } from '../types/api/responses';
+import { AppState } from '../AppState';
+import { EventEmitter } from '../base/EventEmitter';
+import { CatalogView } from '../views/CatalogView';
+import { AppEvent } from '../../types';
+import { IApiProductResponse } from '../../types';
 
 /**
  * CatalogPresenter — презентер каталога товаров.

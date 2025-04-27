@@ -1,14 +1,15 @@
 // src/components/base/api.ts
-import { IApiProductResponse } from "../../types";
 
 export type ApiListResponse<Type> = {
-    total: number, // Общее количество элементов на сервере
-    items: Type[] // Массив элементов определённого типа (generic)
+    total: number;
+    items: Type[];
 };
 
 export type ApiPostMethods = 'POST' | 'PUT' | 'DELETE';
 
-// Класс Api — базовый HTTP-клиент
+/**
+ * Базовый HTTP-клиент для взаимодействия с сервером.
+ */
 export class Api {
     readonly baseUrl: string;
     protected options: RequestInit;
@@ -18,12 +19,14 @@ export class Api {
         this.options = {
             headers: {
                 'Content-Type': 'application/json',
-                ...(options.headers as object ?? {})
+                ...(options.headers ?? {})
             }
         };
     }
 
-    // Общая обработка ответа
+    /**
+     * Обработка ответа сервера.
+     */
     protected handleResponse<T>(response: Response): Promise<T> {
         if (response.ok) {
             return response.json() as Promise<T>;
@@ -33,25 +36,24 @@ export class Api {
         }
     }
 
-    // GET запрос
-    get<T>(uri: string): Promise<T> {
+    /**
+     * Выполнение GET-запроса.
+     */
+    public get<T>(uri: string): Promise<T> {
         return fetch(this.baseUrl + uri, {
             ...this.options,
             method: 'GET'
         }).then(this.handleResponse<T>);
     }
 
-    // POST запрос
-    post<T>(uri: string, data: object, method: ApiPostMethods = 'POST'): Promise<T> {
+    /**
+     * Выполнение POST-, PUT- или DELETE-запроса.
+     */
+    public post<T>(uri: string, data: object, method: ApiPostMethods = 'POST'): Promise<T> {
         return fetch(this.baseUrl + uri, {
             ...this.options,
             method,
             body: JSON.stringify(data)
         }).then(this.handleResponse<T>);
-    }
-
-    // Метод для получения продукта по ID
-    getProductById(id: string): Promise<IApiProductResponse> {
-        return this.get(`/product/${id}`);  // Убедитесь, что API возвращает именно IApiProductResponse
     }
 }

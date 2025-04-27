@@ -5,20 +5,20 @@ import { IApiProductResponse } from '../../types/api/responses';
 import { CDN_URL, categoryMapping } from '../../utils/constants';
 import { AppEvent } from '../../types';
 import { EventEmitter } from '../base/EventEmitter';
-import { AppState } from '../AppState'; // Импорт состояния приложения
+import { AppState } from '../AppState';
+import { ensureElement } from '../../utils/utils';  // ← добавили
 
 /**
  * Компонент для отображения модального окна с подробной информацией о товаре.
  */
 export class ProductPreviewView extends Component {
-  protected template: HTMLTemplateElement;
+  private template: HTMLTemplateElement;
 
   constructor(
-    template: HTMLTemplateElement,      // HTML-шаблон карточки
-    private events: EventEmitter,        // Экземпляр EventEmitter для обработки событий
-    private state: AppState              // Экземпляр состояния приложения
+    template: HTMLTemplateElement,
+    private events: EventEmitter,
+    private state: AppState
   ) {
-    // Создаём элемент на основе шаблона
     super(template.content.firstElementChild!.cloneNode(true) as HTMLElement);
     this.template = template;
   }
@@ -26,61 +26,67 @@ export class ProductPreviewView extends Component {
   /**
    * Рендерит карточку товара в модальном окне.
    * @param product Объект товара для отображения
-   * @returns HTMLElement — готовый элемент карточки для вставки в DOM
+   * @returns HTMLElement — готовый элемент карточки
    */
   public render(product: IApiProductResponse): HTMLElement {
-    const preview = this.template.content.firstElementChild!.cloneNode(true) as HTMLElement;
+    // Клонируем шаблон
+    const preview = this.template.content.firstElementChild!
+      .cloneNode(true) as HTMLElement;
 
-    // Находим необходимые элементы внутри карточки
-    const img = preview.querySelector('.card__image') as HTMLImageElement;
-    const title = preview.querySelector('.card__title') as HTMLElement;
-    const description = preview.querySelector('.card__text') as HTMLElement;
-    const price = preview.querySelector('.card__price') as HTMLElement;
-    const category = preview.querySelector('.card__category') as HTMLElement;
-    const buyButton = preview.querySelector('.card__button') as HTMLButtonElement;
+    // Кэшируем элементы через ensureElement
+    const imgEl       = ensureElement<HTMLImageElement>('.card__image',    preview);
+    const titleEl     = ensureElement<HTMLElement>     ('.card__title',    preview);
+    const descEl      = ensureElement<HTMLElement>     ('.card__text',     preview);
+    const priceEl     = ensureElement<HTMLElement>     ('.card__price',    preview);
+    const categoryEl  = ensureElement<HTMLElement>     ('.card__category', preview);
+    const buyButton   = ensureElement<HTMLButtonElement>('.card__button',   preview);
 
-    // Устанавливаем значения полей карточки
-    img.src = CDN_URL + product.image;
-    img.alt = product.title;
-    title.textContent = product.title;
-    description.textContent = product.description;
-    price.textContent = `${product.price ?? 'Бесценно'} синапсов`;
-    category.textContent = product.category;
-    category.className = `card__category ${categoryMapping[product.category] ?? ''}`;
+    // Устанавливаем картинку и alt
+    this.setImage(imgEl, `${CDN_URL}${product.image}`, product.title);
 
-    /**
-     * Обновляет текст кнопки в зависимости от состояния товара в корзине.
-     */
+    // Заполняем текстовые поля
+    this.setText(titleEl, product.title);
+    this.setText(descEl, product.description);
+    this.setText(
+      priceEl,
+      product.price !== null
+        ? `${product.price} синапсов`
+        : 'Бесценно'
+    );
+    this.setText(categoryEl, product.category);
+
+    // Ставим CSS-класс категории
+    this.toggleClass(
+      categoryEl,
+      categoryMapping[product.category] ?? '',
+      true
+    );
+
+    // Функция обновления текста кнопки
     const updateButton = () => {
       const inCart = this.state.getState().basket.includes(product.id);
-      buyButton.textContent = inCart ? 'Удалить из корзины' : 'В корзину';
+      this.setText(
+        buyButton,
+        inCart ? 'Удалить из корзины' : 'В корзину'
+      );
     };
 
-    // Устанавливаем начальное состояние кнопки
     if (product.price === null) {
-      // Если товара нет в наличии, блокируем кнопку
-      buyButton.disabled = true;
-      buyButton.textContent = 'Нет в наличии';
+      this.setDisabled(buyButton, true);
+      this.setText(buyButton, 'Нет в наличии');
     } else {
       updateButton();
-
-      // Добавляем обработчик клика по кнопке "Купить / Удалить из корзины"
-      buyButton.onclick = (e) => {
-        e.stopPropagation(); // Предотвращаем всплытие события клика
-
+      buyButton.addEventListener('click', e => {
+        e.stopPropagation();
         const inCart = this.state.getState().basket.includes(product.id);
-
-        if (inCart) {
-          // Если товар уже в корзине — удаляем
-          this.events.emit(AppEvent.ORDER_REMOVE_PRODUCT, product.id);
-        } else {
-          // Иначе — добавляем
-          this.events.emit(AppEvent.ORDER_ADD_PRODUCT, product.id);
-        }
-
-        // Мгновенно обновляем текст кнопки
+        this.events.emit(
+          inCart
+            ? AppEvent.ORDER_REMOVE_PRODUCT
+            : AppEvent.ORDER_ADD_PRODUCT,
+          product.id
+        );
         updateButton();
-      };
+      });
     }
 
     return preview;

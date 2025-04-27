@@ -4,6 +4,7 @@ import { Component } from '../base/Component';
 import { EventEmitter } from '../base/EventEmitter';
 import { AppEvent } from '../../types';
 import { FORM_ERRORS } from '../../utils/constants';
+import { ensureElement } from '../../utils/utils';  // ← добавили импорт
 
 /**
  * Класс ContactFormView отвечает за управление формой ввода контактных данных пользователя:
@@ -17,16 +18,16 @@ export class ContactFormView extends Component {
 
   /**
    * @param element HTML-форма ввода контактов
-   * @param events EventEmitter для связи с остальными частями приложения
+   * @param events  EventEmitter для связи с остальными частями приложения
    */
   constructor(protected element: HTMLFormElement, protected events: EventEmitter) {
     super(element);
 
-    // Получаем все необходимые элементы формы
-    this.emailInput = this.element.querySelector('input[name="email"]')!;
-    this.phoneInput = this.element.querySelector('input[name="phone"]')!;
-    this.submitButton = this.element.querySelector('button[type="submit"]')!;
-    this.errorContainer = this.element.querySelector('.form__errors')!;
+    // Получаем все необходимые элементы формы через ensureElement
+    this.emailInput    = ensureElement<HTMLInputElement>('input[name="email"]', this.element);
+    this.phoneInput    = ensureElement<HTMLInputElement>('input[name="phone"]', this.element);
+    this.submitButton  = ensureElement<HTMLButtonElement>('button[type="submit"]', this.element);
+    this.errorContainer= ensureElement<HTMLElement>('.form__errors', this.element);
 
     // Устанавливаем обработчики событий
     this.configure();
@@ -38,22 +39,17 @@ export class ContactFormView extends Component {
    * — отправка формы
    */
   private configure(): void {
-    // При изменении ввода email или телефона запускаем валидацию
     this.emailInput.addEventListener('input', () => this.validate());
     this.phoneInput.addEventListener('input', () => this.validate());
 
-    // Обработка отправки формы
     this.element.addEventListener('submit', e => {
-      e.preventDefault(); // Предотвращаем перезагрузку страницы
+      e.preventDefault();
       if (!this.validate()) return;
 
-      // Обновляем данные заказа в AppState
       this.events.emit(AppEvent.ORDER_UPDATED, {
         email: this.emailInput.value,
         phone: this.phoneInput.value,
       });
-
-      // Подаём сигнал о завершении оформления заказа
       this.events.emit(AppEvent.ORDER_SUBMIT);
     });
   }
@@ -78,8 +74,7 @@ export class ContactFormView extends Component {
       this.clearError();
     }
 
-    // Делаем кнопку активной только при успешной валидации
-    this.submitButton.disabled = !isValid;
+    this.setDisabled(this.submitButton, !isValid);
     return isValid;
   }
 
@@ -89,7 +84,7 @@ export class ContactFormView extends Component {
   public reset(): void {
     this.emailInput.value = '';
     this.phoneInput.value = '';
-    this.submitButton.disabled = true;
+    this.setDisabled(this.submitButton, true);
     this.clearError();
   }
 
@@ -98,13 +93,13 @@ export class ContactFormView extends Component {
    * @param message Текст ошибки
    */
   private showError(message: string): void {
-    this.errorContainer.textContent = message;
+    this.setText(this.errorContainer, message);
   }
 
   /**
    * Очистка текста ошибок.
    */
   private clearError(): void {
-    this.errorContainer.textContent = '';
+    this.setText(this.errorContainer, '');
   }
 }

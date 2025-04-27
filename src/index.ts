@@ -2,9 +2,10 @@
 
 import './scss/styles.scss';
 
+import { ensureElement } from './utils/utils';
 import { AppState } from './components/AppState';
 import { EventEmitter } from './components/base/EventEmitter';
-import { LarekAPI } from './components/base/LarekAPI';
+import { LarekAPI } from './components/services/LarekAPI';
 import { Modal } from './components/common/Modal';
 import { Success } from './components/common/Success';
 import { Basket } from './components/common/Basket';
@@ -12,152 +13,126 @@ import { CatalogView } from './components/views/CatalogView';
 import { ProductPreviewView } from './components/views/ProductPreviewView';
 import { OrderFormView } from './components/views/OrderFormView';
 import { ContactFormView } from './components/views/ContactFormView';
-import { CatalogPresenter } from './pages/CatalogPresenter';
-import { OrderPagePresenter } from './pages/OrderPagePresenter';
+import { CatalogPresenter } from './components/presenter/CatalogPresenter';
+import { OrderPagePresenter } from './components/presenter/OrderPagePresenter';
 
 import { AppEvent } from './types';
 import { API_URL } from './utils/constants';
 
+// ─── Инициализация core-сущностей ───────────────────────
 const emitter = new EventEmitter();
-const state = new AppState(emitter);
-const api = new LarekAPI(API_URL);
+const state   = new AppState(emitter);
+const api     = new LarekAPI(API_URL);
 
-// ─── Обновление заказа ───────────────────────────────
-emitter.on(AppEvent.ORDER_UPDATED, (data: Record<string, unknown>) => {
+// Когда View шлёт ORDER_UPDATED — прокидываем изменения в модель
+emitter.on(AppEvent.ORDER_UPDATED, data => {
   state.updateOrder(data);
 });
 
-// ─── DOM элементы ─────────────────────────────────────
-const catalogContainer = document.querySelector('.gallery') as HTMLElement;
-const modalElement = document.querySelector('.modal') as HTMLElement;
+// ─── Получаем корневые элементы через ensureElement ──────
+const galleryEl      = ensureElement<HTMLElement>('.gallery');
+const modalRootEl    = ensureElement<HTMLElement>('.modal');
+const headerBasketEl = ensureElement<HTMLElement>('.header__basket');
+const counterEl      = ensureElement<HTMLElement>('.header__basket-counter');
 
-const basketTemplate = document.querySelector('#basket') as HTMLTemplateElement;
-const basketElement = basketTemplate.content.firstElementChild!.cloneNode(true) as HTMLElement;
+// ─── Создаём view-компоненты ────────────────────────────
+const catalogView      = new CatalogView(galleryEl, emitter);
 
-const headerBasketBtn = document.querySelector('.header__basket') as HTMLElement;
+const basketTpl        = ensureElement<HTMLTemplateElement>('#basket');
+const basketEl         = basketTpl.content.firstElementChild!
+                             .cloneNode(true) as HTMLElement;
+const basket           = new Basket(basketEl);
+// Подписываемся на клик по кнопке "Оформить"
+basket.onCheckout(() => emitter.emit(AppEvent.ORDER_DELIVERY_REQUIRED));
 
-const successTemplate = document.querySelector('#success') as HTMLTemplateElement;
-const successElement = successTemplate.content.firstElementChild as HTMLElement;
+const successTpl       = ensureElement<HTMLTemplateElement>('#success');
+const successEl        = successTpl.content.firstElementChild as HTMLElement;
+const successView      = new Success(successEl);
 
-const orderTemplate = document.querySelector('#order') as HTMLTemplateElement;
-const orderElement = orderTemplate.content.firstElementChild as HTMLFormElement;
+const orderTpl         = ensureElement<HTMLTemplateElement>('#order');
+const orderFormEl      = orderTpl.content.firstElementChild as HTMLFormElement;
+const orderFormView    = new OrderFormView(orderFormEl, emitter);
 
-const contactsTemplate = document.querySelector('#contacts') as HTMLTemplateElement;
-const contactsElement = contactsTemplate.content.firstElementChild as HTMLFormElement;
+const contactsTpl      = ensureElement<HTMLTemplateElement>('#contacts');
+const contactsFormEl   = contactsTpl.content.firstElementChild as HTMLFormElement;
+const contactFormView  = new ContactFormView(contactsFormEl, emitter);
 
-const previewTemplate = document.querySelector('#card-preview') as HTMLTemplateElement;
+const previewTpl           = ensureElement<HTMLTemplateElement>('#card-preview');
+const productPreviewView   = new ProductPreviewView(previewTpl, emitter, state);
 
-// ─── UI-компоненты ─────────────────────────────────────
-const catalogView = new CatalogView(catalogContainer, emitter);
-const modal = new Modal(modalElement);
-const success = new Success(successElement);
-const basket = new Basket(basketElement);
-const orderForm = new OrderFormView(orderElement, emitter);
-const contactForm = new ContactFormView(contactsElement, emitter);
-const productPreviewView = new ProductPreviewView(previewTemplate, emitter, state);
+const modal              = new Modal(modalRootEl);
 
 // ─── Презентеры ────────────────────────────────────────
 new CatalogPresenter(emitter, state, catalogView);
-new OrderPagePresenter(state, emitter, api, modal, success);
+new OrderPagePresenter(state, emitter, api, modal, successView);
 
-// ─── Загрузка каталога ────────────────────────────────
+// ─── Загрузка каталога ─────────────────────────────────
 api.getProducts()
-  .then(products => {
-    state.setCatalog(products);
-    catalogView.render(products);
-  })
+  .then(products => state.setCatalog(products))
   .catch(err => console.error('Ошибка загрузки каталога:', err));
 
-// ─── Открытие корзины ─────────────────────────────────
-headerBasketBtn.addEventListener('click', () => {
+// ─── Открытие корзины ──────────────────────────────────
+headerBasketEl.addEventListener('click', () => {
   modal.setContent(basket.getElement());
   modal.open();
 });
 
-// ─── Добавление в корзину ─────────────────────────────
-emitter.on(AppEvent.ORDER_ADD_PRODUCT, (productId: string) => {
-  state.addToBasket(productId);
-  renderBasket();
-  updateCounter();
-});
-
-// ─── Удаление из корзины ─────────────────────────────
-emitter.on(AppEvent.ORDER_REMOVE_PRODUCT, (productId: string) => {
-  state.removeFromBasket(productId);
-  renderBasket();
-  updateCounter();
-});
-
-// ─── Шаг 1: форма доставки ───────────────────────────
-emitter.on(AppEvent.ORDER_DELIVERY_REQUIRED, () => {
-  orderForm.reset();
-  modal.setContent(orderForm.getElement());
-  modal.open();
-});
-
-// ─── Шаг 2: форма контактов ──────────────────────────
-emitter.on(AppEvent.ORDER_CONTACTS_REQUIRED, () => {
-  contactForm.reset();
-  modal.setContent(contactForm.getElement());
-  modal.open();
-});
-
-// ─── Открытие карточки товара ────────────────────────
-emitter.on(AppEvent.PRODUCT_PREVIEW_OPEN, (productId: string) => {
-  api.getProductById(productId)
-    .then(product => {
-      modal.setContent(productPreviewView.render(product));
-      modal.open();
-    })
-    .catch(err => {
-      console.error('Ошибка при загрузке подробностей товара:', err);
-    });
-});
-
-// Очищаем корзину после успешного заказа
-emitter.on(AppEvent.ORDER_SUCCESS, () => {
-  renderBasket();  // очистка интерфейса
-  updateCounter(); // обновление счётчика
-});
-
-// ─── Отрисовка корзины ───────────────────────────────
-function renderBasket(): void {
+// ─── Обработка изменения корзины ───────────────────────
+emitter.on(AppEvent.CART_CHANGED, () => {
   const { basket: ids, catalog } = state.getState();
+  const itemTpl = ensureElement<HTMLTemplateElement>('#card-basket');
 
   const items = ids.map((id, idx) => {
-    const product = catalog.find(p => p.id === id);
-    const li = document.createElement('li');
-    li.className = 'basket__item card card_compact';
-    li.innerHTML = `
-      <span class="basket__item-index">${idx + 1}</span>
-      <span class="card__title">${product?.title ?? 'Неизвестный товар'}</span>
-      <span class="card__price">${product?.price ?? 'Бесценно'} синапсов</span>
-      <button class="basket__item-delete" aria-label="удалить"></button>
-    `;
-    li.querySelector('.basket__item-delete')!
+    const product = catalog.find(p => p.id === id)!;
+    const li = itemTpl.content.firstElementChild!
+      .cloneNode(true) as HTMLElement;
+
+    ensureElement<HTMLElement>('.basket__item-index', li).textContent = String(idx + 1);
+    ensureElement<HTMLElement>('.card__title', li).textContent        = product.title;
+    ensureElement<HTMLElement>('.card__price', li).textContent        = `${product.price ?? 'Бесценно'} синапсов`;
+
+    ensureElement<HTMLButtonElement>('.basket__item-delete', li)
       .addEventListener('click', () => {
         emitter.emit(AppEvent.ORDER_REMOVE_PRODUCT, id);
       });
+
     return li;
   });
 
   basket.setItems(items);
-
   const total = ids.reduce((sum, id) => {
     const p = catalog.find(x => x.id === id);
     return sum + (p?.price ?? 0);
   }, 0);
   basket.setTotal(total);
+  counterEl.textContent = String(ids.length);
+});
 
-  const btn = basket.getElement().querySelector('.basket__button') as HTMLButtonElement;
-  btn.onclick = () => emitter.emit(AppEvent.ORDER_DELIVERY_REQUIRED);
-  btn.disabled = ids.length === 0;
-}
+// ─── Добавление/удаление товара ────────────────────────
+emitter.on(AppEvent.ORDER_ADD_PRODUCT,    (id: string) => state.addToBasket(id));
+emitter.on(AppEvent.ORDER_REMOVE_PRODUCT, (id: string) => state.removeFromBasket(id));
 
+// ─── Шаг 1: форма доставки ────────────────────────────
+emitter.on(AppEvent.ORDER_DELIVERY_REQUIRED, () => {
+  orderFormView.reset();
+  modal.setContent(orderFormView.getElement());
+  modal.open();
+});
 
+// ─── Шаг 2: форма контактов ───────────────────────────
+emitter.on(AppEvent.ORDER_CONTACTS_REQUIRED, () => {
+  contactFormView.reset();
+  modal.setContent(contactFormView.getElement());
+  modal.open();
+});
 
-// ─── Обновление счётчика числа товаров в корзине ─────────────────────────────
-function updateCounter(): void {
-  const counter = document.querySelector('.header__basket-counter') as HTMLElement;
-  counter.textContent = String(state.getState().basket.length);
-}
+// ─── Предпросмотр товара без запроса к серверу ────────
+emitter.on(AppEvent.PRODUCT_PREVIEW_OPEN, (productId: string) => {
+  const product = state.getState().catalog.find(p => p.id === productId);
+  if (!product) {
+    console.error(`Product with id=${productId} not found in state`);
+    return;
+  }
+  modal.setContent(productPreviewView.render(product));
+  modal.open();
+});

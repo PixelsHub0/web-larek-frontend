@@ -1,7 +1,6 @@
-// src/components/base/LarekAPI.ts
+// src/components/services/LarekAPI.ts
 
-import { Api } from './api';
-import { ApiListResponse } from './api';
+import { Api, ApiListResponse } from '../base/api';
 import { IApiProductResponse, IApiOrderResponse } from '../../types/api/responses';
 import { ICreateOrderRequest } from '../../types/api/requests';
 
@@ -15,7 +14,7 @@ export class LarekAPI extends Api {
    * @param baseUrl Базовый URL для запросов к серверу
    */
   constructor(baseUrl: string) {
-    super(baseUrl); // Инициализация базового URL через базовый класс
+    super(baseUrl);
   }
 
   /**
@@ -23,8 +22,8 @@ export class LarekAPI extends Api {
    * @returns Промис, который резолвится в массив объектов товаров
    */
   public getProducts(): Promise<IApiProductResponse[]> {
-    return this.get<ApiListResponse<IApiProductResponse>>('/product')  // Выполняем GET-запрос по эндпоинту /product
-      .then((data) => data.items); // Извлекаем массив товаров из ответа сервера
+    return this.get<ApiListResponse<IApiProductResponse>>('/product')
+      .then(data => data.items);
   }
 
   /**
@@ -33,7 +32,7 @@ export class LarekAPI extends Api {
    * @returns Промис, который резолвится в объект товара
    */
   public getProduct(id: string): Promise<IApiProductResponse> {
-    return this.get(`/product/${id}`); // Выполняем GET-запрос для получения данных о продукте
+    return this.get(`/product/${id}`);
   }
 
   /**
@@ -42,6 +41,6 @@ export class LarekAPI extends Api {
    * @returns Промис, который резолвится в ответ сервера о созданном заказе
    */
   public createOrder(order: ICreateOrderRequest): Promise<IApiOrderResponse> {
-    return this.post('/order', order);  // Выполняем POST-запрос на эндпоинт /order с данными заказа
+    return this.post('/order', order);
   }
 }

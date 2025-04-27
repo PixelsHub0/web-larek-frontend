@@ -33,6 +33,7 @@ export const FORM_ERRORS = {
   addressRequired: 'Введите адрес доставки',
   emailRequired: 'Введите email',
   phoneRequired: 'Введите номер телефона',
+  paymentRequired: 'Выберите способ оплаты.'
 };
 
 /**

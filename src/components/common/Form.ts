@@ -1,4 +1,7 @@
+// src/components/common/Form.ts
+
 import { Component } from '../base/Component';
+import { ensureAllElements } from '../../utils/utils';  // ← добавили
 
 /**
  * Form — универсальный компонент для работы с HTML-формами.
@@ -7,34 +10,39 @@ import { Component } from '../base/Component';
  * - сбросом формы
  */
 export class Form extends Component {
-	constructor(el: HTMLElement) {
-		super(el);
-	}
+  private elements: (HTMLInputElement | HTMLButtonElement | HTMLTextAreaElement | HTMLSelectElement)[];
 
-	/**
-	 * Делает все поля и кнопки формы неактивными.
-	 */
-	public disable(): void {
-		const elements = this.element.querySelectorAll('input, select, textarea, button');
-		elements.forEach((el) => {
-			(el as HTMLInputElement | HTMLButtonElement).disabled = true;
-		});
-	}
+  constructor(el: HTMLElement) {
+    super(el);
 
-	/**
-	 * Делает все поля и кнопки формы активными.
-	 */
-	public enable(): void {
-		const elements = this.element.querySelectorAll('input, select, textarea, button');
-		elements.forEach((el) => {
-			(el as HTMLInputElement | HTMLButtonElement).disabled = false;
-		});
-	}
+    // Сохраняем найденные элементы формы в поле класса один раз
+    this.elements = ensureAllElements<
+      HTMLInputElement | HTMLButtonElement | HTMLTextAreaElement | HTMLSelectElement
+    >('input, select, textarea, button', this.element);
+  }
 
-	/**
-	 * Сбрасывает все поля формы до значений по умолчанию.
-	 */
-	public reset(): void {
-		(this.element as HTMLFormElement).reset();
-	}
+  /**
+   * Делает все поля и кнопки формы неактивными.
+   */
+  public disable(): void {
+    this.elements.forEach(el => {
+      this.setDisabled(el, true);
+    });
+  }
+
+  /**
+   * Делает все поля и кнопки формы активными.
+   */
+  public enable(): void {
+    this.elements.forEach(el => {
+      this.setDisabled(el, false);
+    });
+  }
+
+  /**
+   * Сбрасывает все поля формы до значений по умолчанию.
+   */
+  public reset(): void {
+    (this.element as HTMLFormElement).reset();
+  }
 }

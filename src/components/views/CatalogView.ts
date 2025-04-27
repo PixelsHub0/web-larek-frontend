@@ -2,17 +2,19 @@
 
 import { Component } from '../base/Component';
 import { IApiProductResponse } from '../../types/api/responses';
-import { AppEvent } from '../../types/events/enum';
+import { AppEvent } from '../../types';
 import { EventEmitter } from '../base/EventEmitter';
 import { CDN_URL, categoryMapping } from '../../utils/constants';
+import { ensureElement } from '../../utils/utils';
 
 /**
- * Класс CatalogView отвечает за отображение списка карточек товаров в каталоге на главной странице.
+ * Класс CatalogView отвечает за отображение списка карточек товаров
+ * в каталоге на главной странице.
  */
 export class CatalogView extends Component {
   /**
    * @param container Контейнер, в который будут отрисовываться карточки товаров
-   * @param events Брокер событий для общения с другими частями приложения
+   * @param events    Брокер событий для общения с остальными частями приложения
    */
   constructor(
     protected container: HTMLElement,
@@ -22,14 +24,11 @@ export class CatalogView extends Component {
   }
 
   /**
-   * Метод для отрисовки каталога товаров.
+   * Отрисовывает весь каталог.
    * @param products Массив товаров, полученных с сервера
    */
   public render(products: IApiProductResponse[]): void {
-    // Очищаем контейнер перед новой отрисовкой
     this.container.innerHTML = '';
-
-    // Создаём и добавляем карточку для каждого товара
     products.forEach(product => {
       const card = this.createCard(product);
       this.container.append(card);
@@ -37,28 +36,43 @@ export class CatalogView extends Component {
   }
 
   /**
-   * Метод для создания отдельной карточки товара.
+   * Создаёт и настраивает карточку одного товара.
    * @param product Данные одного товара
-   * @returns HTML-элемент карточки товара
+   * @returns готовый DOM-элемент карточки
    */
   protected createCard(product: IApiProductResponse): HTMLElement {
-    // Получаем шаблон карточки из HTML
-    const template = document.getElementById('card-catalog') as HTMLTemplateElement;
-    const card = template.content.firstElementChild!.cloneNode(true) as HTMLElement;
+    // Берём шаблон карточки из DOM
+    const template = ensureElement<HTMLTemplateElement>('#card-catalog');
+    const card     = template.content.firstElementChild!
+                         .cloneNode(true) as HTMLElement;
 
-    // Устанавливаем id товара в dataset карточки
     card.dataset.id = product.id;
 
-    // Заполняем данные карточки: категория, название, изображение и цена
-    const categoryElement = card.querySelector('.card__category') as HTMLElement;
-    categoryElement.textContent = product.category;
-    categoryElement.classList.add(categoryMapping[product.category] || 'card__category_other');
+    // Кэшируем все элементы внутри карточки
+    const categoryEl = ensureElement<HTMLElement>('.card__category', card);
+    const titleEl    = ensureElement<HTMLElement>('.card__title',    card);
+    const priceEl    = ensureElement<HTMLElement>('.card__price',    card);
+    const imgEl      = ensureElement<HTMLImageElement>('.card__image', card);
 
-    (card.querySelector('.card__title') as HTMLElement).textContent = product.title;
-    (card.querySelector('.card__image') as HTMLImageElement).src = `${CDN_URL}${product.image}`;
-    (card.querySelector('.card__price') as HTMLElement).textContent = product.price ? `${product.price} синапсов` : 'Бесценно';
+    // Заполняем данные
+    this.setText(categoryEl, product.category);
+    this.toggleClass(
+      categoryEl,
+      categoryMapping[product.category] || 'card__category_other',
+      true
+    );
 
-    // При клике на карточку — открыть модальное окно с подробным описанием товара
+    this.setText(titleEl, product.title);
+    this.setText(
+      priceEl,
+      product.price !== null
+        ? `${product.price} синапсов`
+        : 'Бесценно'
+    );
+
+    this.setImage(imgEl, `${CDN_URL}${product.image}`, product.title);
+
+    // По клику открываем предпросмотр товара
     card.addEventListener('click', () => {
       this.events.emit(AppEvent.PRODUCT_PREVIEW_OPEN, product.id);
     });

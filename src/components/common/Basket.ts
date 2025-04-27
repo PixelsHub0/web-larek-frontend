@@ -1,35 +1,48 @@
 // src/components/common/Basket.ts
+
 import { Component } from '../base/Component';
+import { ensureElement } from '../../utils/utils';  // ← утиль для селекторов
 
 /**
- * Компонент Basket отображает список товаров в корзине и общую стоимость.
+ * Компонент Basket отображает список товаров в корзине и общую стоимость,
+ * а также управляет кнопкой "Оформить".
  */
 export class Basket extends Component {
-	private list: HTMLElement;
-	private totalElement: HTMLElement;
+  private list: HTMLElement;
+  private totalElement: HTMLElement;
+  private checkoutButton: HTMLButtonElement;
 
-	constructor(el: HTMLElement) {
-		super(el);
+  constructor(el: HTMLElement) {
+    super(el);
 
-		// Найдём элементы списка и итоговой цены
-		this.list = this.element.querySelector('.basket__list') as HTMLElement;
-		this.totalElement = this.element.querySelector('.basket__price') as HTMLElement;
-	}
+    // Кэшируем все три элемента
+    this.list           = ensureElement<HTMLElement>('.basket__list',  this.element);
+    this.totalElement   = ensureElement<HTMLElement>('.basket__price', this.element);
+    this.checkoutButton = ensureElement<HTMLButtonElement>('.basket__button', this.element);
+  }
 
-	/**
-	 * Устанавливает элементы товаров в корзину
-	 * @param items массив DOM-элементов <li>
-	 */
-	public setItems(items: HTMLElement[]): void {
-		this.list.innerHTML = ''; // очищаем список перед новой отрисовкой
-		items.forEach(item => this.list.append(item));
-	}
+  /**
+   * Обновляет DOM-элементы списка.
+   * Также включает или выключает кнопку "Оформить".
+   */
+  public setItems(items: HTMLElement[]): void {
+    this.list.innerHTML = '';
+    items.forEach(item => this.list.append(item));
+    this.updateButton(items.length);
+  }
 
-	/**
-	 * Устанавливает итоговую сумму заказа
-	 * @param total сумма в ₽
-	 */
-	public setTotal(total: number): void {
-		this.totalElement.textContent = `${total} синапсов`;
-	}
+  /** Обновляет итоговую сумму в корзине */
+  public setTotal(total: number): void {
+    this.setText(this.totalElement, `${total} синапсов`);
+  }
+
+  /** Подписаться на клик по кнопке "Оформить" */
+  public onCheckout(callback: () => void): void {
+    this.checkoutButton.addEventListener('click', callback);
+  }
+
+  /** Блокировка/разблокировка кнопки в зависимости от числа товаров */
+  private updateButton(count: number): void {
+    this.checkoutButton.disabled = count === 0;
+  }
 }

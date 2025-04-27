@@ -1,122 +1,88 @@
 // src/components/views/OrderFormView.ts
 
 import { Component } from '../base/Component';
-import { AppEvent } from '../../types';
 import { EventEmitter } from '../base/EventEmitter';
-import { FORM_ERRORS } from '../../utils/constants';
+import { AppEvent } from '../../types';
+import { ensureElement, ensureAllElements } from '../../utils/utils'; 
 
 /**
- * Класс OrderFormView отвечает за управление формой доставки заказа.
+ * Класс OrderFormView отвечает за управление формой доставки заказа:
+ * отправляет изменения полей в AppState и рендерит результат валидации.
  */
 export class OrderFormView extends Component {
   private addressInput: HTMLInputElement;
-  private paymentButtons: NodeListOf<HTMLButtonElement>;
+  private paymentButtons: HTMLButtonElement[];
   private submitButton: HTMLButtonElement;
   private errorContainer: HTMLElement;
 
-  private payment: string | null = null;
-
-  /**
-   * @param element HTML-форма оформления заказа
-   * @param events EventEmitter для связи с остальными частями приложения
-   */
   constructor(protected element: HTMLFormElement, protected events: EventEmitter) {
     super(element);
 
-    // Находим все необходимые элементы внутри формы
-    this.addressInput = this.element.querySelector('input[name="address"]')!;
-    this.paymentButtons = this.element.querySelectorAll('button[name]');
-    this.submitButton = this.element.querySelector('.order__button')!;
-    this.errorContainer = this.element.querySelector('.form__errors')!;
+    // Кэшируем все нужные элементы формы через ensure*
+    this.paymentButtons = ensureAllElements<HTMLButtonElement>('button[name]', this.element);
+    this.addressInput   = ensureElement<HTMLInputElement>('input[name="address"]', this.element);
+    this.submitButton   = ensureElement<HTMLButtonElement>('.order__button', this.element);
+    this.errorContainer = ensureElement<HTMLElement>('.form__errors', this.element);
 
-    // Конфигурируем обработчики событий
     this.configure();
+
+    // Подписка на результат валидации из AppState
+    this.events.on(AppEvent.ORDER_FORM_VALIDITY_CHANGED, ({ isValid, errors }) => {
+      this.setDisabled(this.submitButton, !isValid);
+
+      if (errors.address) {
+        this.showError(errors.address);
+      } else if (errors.payment) {
+        this.showError(errors.payment);
+      } else {
+        this.clearError();
+      }
+    });
   }
 
   /**
-   * Настройка обработчиков событий формы:
-   * — выбор способа оплаты
-   * — ввод адреса
-   * — отправка формы
+   * Навешивает слушатели:
+   * — выбор способа оплаты,
+   * — ввод адреса,
+   * — отправка формы.
    */
   private configure(): void {
-    // Обработчик выбора способа оплаты
     this.paymentButtons.forEach(button => {
       button.addEventListener('click', () => {
-        // Снимаем выделение со всех кнопок и выделяем выбранную
-        this.paymentButtons.forEach(b => b.classList.remove('button_alt-active'));
-        button.classList.add('button_alt-active');
-        this.payment = button.name;
-        this.validate();
+        // обновляем UI кнопок
+        this.paymentButtons.forEach(b => this.toggleClass(b, 'button_alt-active', false));
+        this.toggleClass(button, 'button_alt-active', true);
+
+        // отправляем новое значение payment в модель
+        this.events.emit(AppEvent.ORDER_UPDATED, { payment: button.name });
       });
     });
 
-    // Обработчик ввода адреса
     this.addressInput.addEventListener('input', () => {
-      this.validate();
+      this.events.emit(AppEvent.ORDER_UPDATED, { address: this.addressInput.value });
     });
 
-    // Обработчик отправки формы
     this.element.addEventListener('submit', e => {
-      e.preventDefault(); // Предотвращаем перезагрузку страницы
-      if (!this.validate()) return;
-
-      // Обновляем данные заказа в AppState
-      this.events.emit(AppEvent.ORDER_UPDATED, {
-        address: this.addressInput.value,
-        payment: this.payment,
-      });
-
-      // Переходим ко второму шагу — заполнение контактов
+      e.preventDefault();
       this.events.emit(AppEvent.ORDER_CONTACTS_REQUIRED);
     });
   }
 
-  /**
-   * Валидация полей формы доставки:
-   * — Проверяет заполненность адреса и выбор способа оплаты
-   * @returns boolean — валидна ли форма
-   */
-  private validate(): boolean {
-    const address = this.addressInput.value.trim();
-    const isValid = address.length > 0 && !!this.payment;
-
-    // Активируем или деактивируем кнопку отправки
-    this.submitButton.disabled = !isValid;
-
-    if (!address) {
-      // Показываем ошибку если адрес не введён
-      this.showError(FORM_ERRORS.addressRequired);
-    } else {
-      this.clearError();
-    }
-
-    return isValid;
-  }
-
-  /**
-   * Сброс формы к начальному состоянию.
-   */
+  /** Сброс формы к первоначальному состоянию. */
   public reset(): void {
     this.addressInput.value = '';
-    this.payment = null;
-    this.submitButton.disabled = true;
-    this.paymentButtons.forEach(btn => btn.classList.remove('button_alt-active'));
+    this.paymentButtons.forEach(btn => this.toggleClass(btn, 'button_alt-active', false));
+    this.setDisabled(this.submitButton, true);
     this.clearError();
   }
 
-  /**
-   * Вывод сообщения об ошибке в форму.
-   * @param message Текст ошибки
-   */
+  /** Показывает текст ошибки */
   private showError(message: string): void {
-    this.errorContainer.textContent = message;
+    this.setText(this.errorContainer, message);
   }
 
-  /**
-   * Очистка текста ошибок в форме.
-   */
+  /** Очищает текст ошибки */
   private clearError(): void {
-    this.errorContainer.textContent = '';
+    this.setText(this.errorContainer, '');
   }
 }

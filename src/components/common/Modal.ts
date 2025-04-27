@@ -1,48 +1,54 @@
+// src/components/common/Modal.ts
+
 import { Component } from '../base/Component';
+import { ensureElement } from '../../utils/utils';
 
 /**
  * Modal — универсальное модальное окно.
  * Позволяет:
  * - отобразить любой HTML внутри себя
- * - управлять открытием и закрытием
+ * - управлять открытием и закрытию
  */
 export class Modal extends Component {
-	protected content: HTMLElement;
-	protected closeButton: HTMLElement;
+  protected content: HTMLElement;
+  protected closeButton: HTMLElement;
 
-	constructor(el: HTMLElement) {
-		super(el);
-		this.content = el.querySelector('.modal__content') as HTMLElement;
-		this.closeButton = el.querySelector('.modal__close') as HTMLElement;
-		this.closeButton.addEventListener('click', () => this.close());
-		this.element.addEventListener('click', (e: MouseEvent) => {
-			if (e.target === this.element) {
-				this.close();
-			}
-		});
-	}
+  constructor(el: HTMLElement) {
+    super(el);
 
-	/**
-	 * Устанавливает содержимое модального окна.
-	 * @param content DOM-элемент для отображения внутри модалки
-	 */
-	public setContent(content: HTMLElement): void {
-		this.content.innerHTML = '';
-		this.content.append(content);
-	}
+    // Кэшируем элементы через ensureElement
+    this.content     = ensureElement<HTMLElement>('.modal__content', this.element);
+    this.closeButton = ensureElement<HTMLElement>('.modal__close',   this.element);
 
-	/**
-	 * Открывает модальное окно.
-	 */
-	public open(): void {
-		this.element.classList.add('modal_active');
-	}
+    this.closeButton.addEventListener('click', () => this.close());
+    this.element.addEventListener('click', (e: MouseEvent) => {
+      if (e.target === this.element) {
+        this.close();
+      }
+    });
+  }
 
-	/**
-	 * Закрывает модальное окно.
-	 */
-	public close(): void {
-		this.element.classList.remove('modal_active');
-		document.body.style.overflow = '';
-	}
+  /**
+   * Устанавливает содержимое модального окна.
+   * @param content DOM-элемент для отображения внутри модалки
+   */
+  public setContent(content: HTMLElement): void {
+    this.content.innerHTML = '';
+    this.content.append(content);
+  }
+
+  /**
+   * Открывает модальное окно.
+   */
+  public open(): void {
+    this.toggleClass(this.element, 'modal_active', true);
+  }
+
+  /**
+   * Закрывает модальное окно.
+   */
+  public close(): void {
+    this.toggleClass(this.element, 'modal_active', false);
+    document.body.style.overflow = '';
+  }
 }
