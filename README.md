@@ -1,151 +1,190 @@
-# Проектная работа "Web-Ларёк"
+# Web-Ларёк
 
-### 📦 Стек: TypeScript, HTML, SCSS, Webpack, MVP
+Интерактивный одностраничный интернет-магазин для веб-разработчиков: каталог товаров, корзина, оформление заказа в два шага.
 
-## 🔧 Установка и запуск проекта
+---
+
+## 📦 Стек
+
+- **TypeScript**  
+- **HTML** + шаблоны `<template>`  
+- **SCSS** (бЭМ-блоки в `common.blocks/` + глобальные стили)  
+- **Webpack**  
+- **Архитектурный паттерн**: MVP (Model–View–Presenter)  
+
+---
+
+## 🔧 Установка и запуск
 
 ```bash
-# Установка зависимостей
+# Установить зависимости
 npm install
 
-# Запуск проекта в режиме разработки
+# Запустить в режиме разработки (с хот-релоадом)
 npm run start
 
-# Сборка проекта
+# Собрать финальный бандл
 npm run build
 ```
-## **Структура проекта**
+## Базовые классы (src/components/base)
+### Component
+**Назначение:** базовый класс для всех View-компонентов.
+
+#### Методы:
+
+- **setText(el, text) — безопасно установить textContent.**
+- **setImage(img, src, alt) — установить src/alt для <img>.**
+- **setDisabled(el, flag) — включить/отключить кнопку или поле.**
+- **toggleClass(el, className, flag) — добавить/убрать CSS-класс.**
+
+### EventEmitter
+- **Назначение:** реализация шины событий (pub/sub).
+
+#### Функции:
+
+- **on(event, handler) — подписаться.**
+- **off(event, handler) — отписаться.**
+- **emit(event, payload?) — уведомить всех слушателей.**
+
+### Api / LarekAPI
+- **Api (src/components/base/api.ts): низкоуровневый HTTP-клиент (get, post).**
+
+- **LarekAPI (src/components/services/LarekAPI.ts): конкретные методы:**
+
+- **getProducts(): Promise<IApiProductResponse[]> — получает список и сразу дополняет image полным URL.**
+
+- **getProduct(id): Promise<IApiProductResponse> — тот же продукт по ID.**
+
+- **createOrder(data): Promise<IApiOrderResponse> — отправка заказа.**
+## Компоненты и презентеры
+### Слой View (src/components/views)
+- #### CatalogView
+
+- **Рендерит сетку карточек товаров из массива IApiProductResponse.**
+
+- **По клику эмитит PRODUCT_PREVIEW_OPEN.**
+
+- #### ProductPreviewView
+
+- **Рендерит модальное окно с детальной информацией о товаре.**
+
+- **Кнопка «В корзину» / «Удалить», обновление по ORDER_ADD_PRODUCT / ORDER_REMOVE_PRODUCT.**
+
+- #### OrderFormView
+
+- **Шаг 1: выбор способа оплаты и ввод адреса.**
+
+- **Эмитит ORDER_UPDATED при изменении полей.**
+
+- **Слушает ORDER_FORM_VALIDITY_CHANGED и включает кнопку «Далее».**
+
+- **По submit → ORDER_CONTACTS_REQUIRED.**
+
+- #### ContactFormView
+
+- **Шаг 2: ввод email и телефона.**
+
+- **Аналогичная схема с ORDER_UPDATED и ORDER_FORM_VALIDITY_CHANGED.**
+
+- **По submit → ORDER_SUBMIT.**
+
+### Переиспользуемые компоненты (src/components/common)
+- #### Modal
+
+- **Обёртка для любого содержимого.**
+
+- **Закрытие: клик вне контента или по крестику.**
+
+- #### Basket
+
+- **Показывает список ```<li>``` с товарами (шаблон #card-basket).**
+
+- **Отображает суммарную стоимость.**
+
+- **Управляет кнопкой «Оформить» (активна при ≥1 товаре).**
+
+- #### Success
+
+- **Сообщение об успешном оформлении заказа.**
+
+### Presenter (src/components/presenter)
+- #### CatalogPresenter
+
+ - **Запрашивает getProducts() у LarekAPI.**
+
+ - **Делает state.setCatalog(items) → CatalogView.render(items).**
+
+- #### OrderPagePresenter
+
+- **Слушает шаги процесса (ORDER_DELIVERY_REQUIRED, ORDER_CONTACTS_REQUIRED, ORDER_SUBMIT, ORDER_SUCCESS).**
+
+- **Взаимодействует с state и modal / successView.**
+## Типы данных (src/types)
+### IApiProductResponse
 ```
-src/ — исходные файлы проекта
-
-components/ — компоненты приложения
-
-base/ — базовые классы: Component, EventEmitter
-
-views/ — компоненты отображения (View)
-
-common/ — переиспользуемые компоненты, формы, корзина и пр.
-
-types/ — типы данных, интерфейсы, перечисления
-
-utils/ — утилиты и константы
-
-index.ts — точка входа приложения
-
-scss/ — стили
-
-public/index.html — основной HTML
-
-README.md — описание проекта
-```
-## **Архитектура проекта**
-**Проект реализован по архитектурному паттерну MVP (Model–View–Presenter).**
-
-### **Model:**
-**- AppState — централизованное состояние приложения, хранит каталог, корзину, заказ**
-
-**- LarekAPI — взаимодействие с сервером (API)**
-
-**- Типы: IApiProductResponse, ICreateOrderRequest, IOrderResult**
-
-### **View :**
-#### **Компоненты, которые отвечают за отрисовку и DOM-логику:**
-
-**- CatalogView — отображение каталога товаров**
-
-**- ProductPreviewView — модальное окно с описанием товара**
-
-**- Basket — корзина с товарами**
-
-**- FormView, OrderContactsFormView, OrderDeliveryFormView — формы**
-
-**- Modal — универсальное модальное окно**
-
-**- SuccessOrderView — окно успешного оформления**
-
-**- PageView — управление основными блоками страницы**
-
-### **Presenter (Управляющий слой)**
-**- EventEmitter — брокер событий, обеспечивает слабую связанность между модулями**
-
-**- index.ts — связывает все слои**
-### **Компоненты и назначение**
-| Компонент               | Назначение                                  |
-|-------------------------|---------------------------------------------|
-| `AppState`              | Управление состоянием и логикой приложения |
-| `Modal`                 | Модальное окно                              |
-| `CatalogView`           | Рендер карточек товаров                     |
-| `ProductPreviewView`    | Модальное окно карточки товара              |
-| `Basket`                | Рендер списка товаров в корзине             |
-| `OrderDeliveryFormView` | Форма доставки                              |
-| `OrderContactsFormView` | Форма контактов                             |
-| `FormView`              | Управление общей логикой форм               |
-| `SuccessOrderView`      | Сообщение об успешной оплате                |
-
-### **Типы данных**
-
-```
-export interface IApiProductResponse {
+interface IApiProductResponse {
   id: string;
   title: string;
   description: string;
-  image: string;
+  image: string;         // полный URL после LarekAPI
   category: string;
-  price: number | null;
+  price: number | null;  // null → «Бесценно»
 }
-
-export interface ICreateOrderRequest {
+```
+### ICreateOrderRequest
+```
+interface ICreateOrderRequest {
   payment: 'online' | 'cash';
   address: string;
   email: string;
   phone: string;
   total: number;
-  items: string[];
+  items: string[];       // массив id из корзины
 }
-
-export interface IOrderResult {
+```
+### IApiOrderResponse
+ts
+Копировать
+Редактировать
+```
+interface IApiOrderResponse {
   id: string;
   total: number;
 }
-
 ```
+### AppEvent (enum)
+#### Перечисление всех событий приложения:
 
-### **Описание взаимодействий**
-#### **1.При загрузке:**
+- **```CATALOG_CHANGED, CART_CHANGED, ORDER_UPDATED, ORDER_FORM_VALIDITY_CHANGED, ORDER_ADD_PRODUCT, ORDER_REMOVE_PRODUCT, ORDER_DELIVERY_REQUIRED, ORDER_CONTACTS_REQUIRED, ORDER_SUBMIT, ORDER_SUCCESS, PRODUCT_PREVIEW_OPEN и другие```.**
+## Взаимодействие слоёв
+### 1.Загрузка
 
-- **Загружается каталог через LarekAPI**
+- **```CatalogPresenter``` → ```LarekAPI.getProducts()``` → ```state.setCatalog``` → ```эмит CATALOG_CHANGED``` → ```CatalogView.render.```**
+### 2.Предпросмотр
+- **```CatalogView по клику``` → ```PRODUCT_PREVIEW_OPEN``` → ```в index.ts``` показывается ```ProductPreviewView.render(product)```.**
 
-- **Данные передаются в AppState**
+### 3.Добавление в корзину
 
-- **Через событие CATALOG_CHANGED обновляется CatalogView**
+- **```ProductPreviewView``` эмитит ```ORDER_ADD_PRODUCT``` → ```state.addToBasket``` → ```CART_CHANGED``` → ```Basket``` обновляет список и total.**
 
-#### **2.При клике на карточку:**
+### 4.Оформление заказа
 
-- **Срабатывает событие PRODUCT_PREVIEW_OPEN**
+- Шаг 1: **```OrderFormView → ORDER_UPDATED``` → ```AppState.validate``` → ```ORDER_FORM_VALIDITY_CHANGED``` → активация кнопки → ```ORDER_CONTACTS_REQUIRED```.**
 
-- **ProductPreviewView открывается с деталями товара**
+- Шаг 2: **```ContactFormView``` → аналогично → ```ORDER_SUBMIT``` → ```LarekAPI.createOrder``` → ```ORDER_SUCCESS``` → ```Success``` + сброс корзины.**
+## Паттерны и практики
+- **```MVP```: чёткое разделение Model (AppState), View и Presenter.**
 
-#### **3.При добавлении товара:**
+- **```EventEmitter```: шина для слабосвязанного взаимодействия.**
 
-- **Событие ORDER_ADD_PRODUCT обновляет AppState**
+- **```Утилиты```: ensureElement / ensureAllElements для безопасного поиска DOM.**
 
-- **CART_CHANGED вызывает обновление корзины и счётчика**
+- **```Типизация```: строгий TS без any, интерфейсы в src/types.**
 
-#### **4.При оформлении заказа:**
+- **```Кэширование DOM```: все селекторы в конструкторе → поля класса.**
 
-- **Форма разбита на 2 шага (доставка и контакты)**
+- **```Единая точка входа```: ```src/index.ts```.**
 
-- **После валидации отправляется запрос POST через LarekAPI**
 
-- **Открывается окно успешного оформления**
-
-### **Используемые паттерны**
-- **MVP — Model-View-Presenter**
-
-- **ventEmitter (брокер событий) — для слабой связанности**
-
-- **Композиция вместо наследования в представлении**
-
-- **Единая точка входа (index.ts) — для инициализации всех связей**
 ## **Uml схема**
-![uml схема проекта](src/images/uml_weblarek.png)
+![uml схема проекта](src/images/UmlWebLarek.svg)
