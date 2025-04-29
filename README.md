@@ -26,6 +26,7 @@ npm run start
 # Собрать финальный бандл
 npm run build
 ```
+
 ```
 src/
 ├── components/
@@ -43,8 +44,10 @@ src/
     └── index.html         # шаблон страницы для Webpack
 
 ```
+
 ## Утилиты (src/utils/utils.ts)
- - **ensureElement<T>(selector, context?) — безопасный поиск одного элемента, кидает ошибку, если не найден.**
+
+- **ensureElement<T>(selector, context?) — безопасный поиск одного элемента, кидает ошибку, если не найден.**
 
 - **ensureAllElements<T>(selector, context?) — поиск сразу нескольких элементов.**
 
@@ -89,14 +92,15 @@ src/
 ## Компоненты и презентеры
 
 ### Слой View (src/components/views)
+
 - #### HeaderView
-- **Кэширует .header__basket и .header__basket-counter.**
+- **Кэширует .header**basket и .header**basket-counter.**
 
 - **onBasketClick(handler) — подписка на открытие корзины.**
 
 - **setCounter(count) — обновить счётчик.**
 - #### BasketItemView
-- **В конструкторе клонирует строку корзины и кэширует .basket__item-index, .card__title, .card__price, .basket__item-delete.**
+- **В конструкторе клонирует строку корзины и кэширует .basket**item-index, .card**title, .card**price, .basket**item-delete.**
 
 - **Наполняет номер, название, цену; по клику эмитит ORDER_REMOVE_PRODUCT.**
 
@@ -215,7 +219,7 @@ interface IApiOrderResponse {
 
 ### 1.Загрузка
 
-- **`CatalogPresenter` → `LarekAPI.getProducts()` →  `state.setCatalog` → `CatalogView.render`**
+- **`CatalogPresenter` → `LarekAPI.getProducts()` → `state.setCatalog` → `CatalogView.render`**
 
 ### 2.Предпросмотр
 
@@ -223,7 +227,7 @@ interface IApiOrderResponse {
 
 ### 3.Добавление в корзину
 
-- **`ProductPreviewView` →  `ORDER_ADD_PRODUCT/ORDER_REMOVE_PRODUCT` → `state.addToBaske/removeFromBasket` → `CART_CHANGED` → `Basket` обновляет список и total, `HeaderView` обновляет счётчик.**
+- **`ProductPreviewView` → `ORDER_ADD_PRODUCT/ORDER_REMOVE_PRODUCT` → `state.addToBaske/removeFromBasket` → `CART_CHANGED` → `Basket` обновляет список и total, `HeaderView` обновляет счётчик.**
 
 ### 4.Оформление заказа
 
@@ -247,4 +251,4 @@ interface IApiOrderResponse {
 
 ## **Uml схема**
 
-![uml схема проекта](src/images/UmlWebLarek.svg)
+![uml схема проекта](src/images/UmlWebLarek.png)
