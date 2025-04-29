@@ -9,7 +9,7 @@ import { AppState } from '../AppState';
 import { ensureElement } from '../../utils/utils';
 
 /**
- * Компонент для отображения модального окна с подробной информацией о товаре.
+ * Компонент предпросмотра товара в модальном окне.
  */
 export class ProductPreviewView extends Component {
   private templateElement: HTMLTemplateElement;
@@ -19,78 +19,80 @@ export class ProductPreviewView extends Component {
     private events: EventEmitter,
     private state: AppState
   ) {
+    // Передаём в базовый Component один клон шаблона
     super(templateElement.content.firstElementChild!.cloneNode(true) as HTMLElement);
     this.templateElement = templateElement;
   }
 
   /**
    * Рендерит карточку товара в модальном окне.
-   * @param product Объект товара для отображения
-   * @returns HTMLElement — готовый элемент карточки
+   * @param product Данные товара
+   * @returns HTMLElement — готовый элемент для вставки в Modal
    */
   public render(product: IApiProductResponse): HTMLElement {
-    // Клонируем шаблон
-    const previewElement =
-      this.templateElement.content.firstElementChild!
-        .cloneNode(true) as HTMLElement;
+    // Клонируем свежий экземпляр шаблона
+    const preview = this.templateElement.content
+      .firstElementChild!
+      .cloneNode(true) as HTMLElement;
 
-    // Кэшируем все нужные подэлементы
-    const imageElement       = ensureElement<HTMLImageElement>('.card__image',    previewElement);
-    const titleElement       = ensureElement<HTMLElement>     ('.card__title',    previewElement);
-    const descriptionElement = ensureElement<HTMLElement>     ('.card__text',     previewElement);
-    const priceElement       = ensureElement<HTMLElement>     ('.card__price',    previewElement);
-    const categoryElement    = ensureElement<HTMLElement>     ('.card__category', previewElement);
-    const buttonElement      = ensureElement<HTMLButtonElement>('.card__button',   previewElement);
+    // Кэшируем нужные элементы из клона
+    const imageEl    = ensureElement<HTMLImageElement>('.card__image',    preview);
+    const titleEl    = ensureElement<HTMLElement>     ('.card__title',    preview);
+    const descEl     = ensureElement<HTMLElement>     ('.card__text',     preview);
+    const priceEl    = ensureElement<HTMLElement>     ('.card__price',    preview);
+    const categoryEl = ensureElement<HTMLElement>     ('.card__category', preview);
+    const buttonEl   = ensureElement<HTMLButtonElement>('.card__button',  preview);
 
-    // Корректное склеивание URL изображения
+    // 1) Очищаем все возможные цветовые классы
+    Object.values(categoryMapping).forEach(cls => {
+      categoryEl.classList.remove(cls);
+    });
+
+    // 2) Устанавливаем текст и нужный CSS-класс для категории
+    this.setText(categoryEl, product.category);
+    const mapClass = categoryMapping[product.category] ?? 'card__category_other';
+    this.toggleClass(categoryEl, mapClass, true);
+
+    // 3) Корректно склеиваем URL изображения
     const imageUrl = product.image.startsWith('http')
       ? product.image
       : `${CDN_URL.replace(/\/+$/, '')}/${product.image.replace(/^\/+/, '')}`;
-    this.setImage(imageElement, imageUrl, product.title);
+    this.setImage(imageEl, imageUrl, product.title);
 
-    // Заполняем текстовые поля
-    this.setText(titleElement, product.title);
-    this.setText(descriptionElement, product.description);
+    // 4) Заполняем остальные поля
+    this.setText(titleEl, product.title);
+    this.setText(descEl, product.description);
     this.setText(
-      priceElement,
-      product.price !== null
-        ? `${product.price} синапсов`
-        : 'Бесценно'
+      priceEl,
+      product.price !== null ? `${product.price} синапсов` : 'Бесценно'
     );
 
-    // Устанавливаем категорию и цветовой класс
-    this.setText(categoryElement, product.category);
-    this.toggleClass(
-      categoryElement,
-      categoryMapping[product.category] ?? 'card__category_other',
-      true
-    );
-
-    // Функция для обновления текста кнопки
-    const updateButtonText = (): void => {
-      const inCart = this.state.getState().basket.includes(product.id);
-      this.setText(buttonElement, inCart ? 'Удалить из корзины' : 'В корзину');
-    };
-
+    // 5) Настраиваем кнопку:
     if (product.price === null) {
-      // Если товара нет в наличии
-      this.setDisabled(buttonElement, true);
-      this.setText(buttonElement, 'Нет в наличии');
+      // Нет в наличии
+      this.setDisabled(buttonEl, true);
+      this.setText(buttonEl, 'Нет в наличии');
+      buttonEl.onclick = null;
     } else {
-      updateButtonText();
-      buttonElement.addEventListener('click', event => {
-        event.stopPropagation();
-        const inCart = this.state.getState().basket.includes(product.id);
+      // Определяем, в корзине ли товар сейчас
+      const inCart = this.state.getState().basket.includes(product.id);
+      this.setDisabled(buttonEl, false);
+      this.setText(buttonEl, inCart ? 'Удалить из корзины' : 'В корзину');
+
+      // Один обработчик через onclick — не дублируем события
+      buttonEl.onclick = e => {
+        e.stopPropagation();
+        const wasInCart = this.state.getState().basket.includes(product.id);
         this.events.emit(
-          inCart
-            ? AppEvent.ORDER_REMOVE_PRODUCT
-            : AppEvent.ORDER_ADD_PRODUCT,
+          wasInCart ? AppEvent.ORDER_REMOVE_PRODUCT : AppEvent.ORDER_ADD_PRODUCT,
           product.id
         );
-        updateButtonText();
-      });
+        // Обновляем текст сразу после клика
+        const nowInCart = this.state.getState().basket.includes(product.id);
+        this.setText(buttonEl, nowInCart ? 'Удалить из корзины' : 'В корзину');
+      };
     }
 
-    return previewElement;
+    return preview;
   }
 }
