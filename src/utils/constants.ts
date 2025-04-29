@@ -32,7 +32,7 @@ export enum CheckoutStep {
  * Маппинг названий категорий товаров на соответствующие CSS-классы оформления.
  */
 export const categoryMapping: Record<string, string> = {
-  другое: 'card__category_other',
+   другое: 'card__category_other',
   'софт-скил': 'card__category_soft',
   дополнительное: 'card__category_additional',
   кнопка: 'card__category_button',

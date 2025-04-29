@@ -2,7 +2,7 @@
 
 import { Component } from '../base/Component';
 import { IApiProductResponse } from '../../types/api/responses';
-import { categoryMapping } from '../../utils/constants';
+import { CDN_URL, categoryMapping } from '../../utils/constants';
 import { AppEvent } from '../../types';
 import { EventEmitter } from '../base/EventEmitter';
 import { AppState } from '../AppState';
@@ -12,15 +12,15 @@ import { ensureElement } from '../../utils/utils';
  * Компонент для отображения модального окна с подробной информацией о товаре.
  */
 export class ProductPreviewView extends Component {
-  private template: HTMLTemplateElement;
+  private templateElement: HTMLTemplateElement;
 
   constructor(
-    template: HTMLTemplateElement,
+    templateElement: HTMLTemplateElement,
     private events: EventEmitter,
     private state: AppState
   ) {
-    super(template.content.firstElementChild!.cloneNode(true) as HTMLElement);
-    this.template = template;
+    super(templateElement.content.firstElementChild!.cloneNode(true) as HTMLElement);
+    this.templateElement = templateElement;
   }
 
   /**
@@ -30,49 +30,56 @@ export class ProductPreviewView extends Component {
    */
   public render(product: IApiProductResponse): HTMLElement {
     // Клонируем шаблон
-    const preview = this.template.content.firstElementChild!
-      .cloneNode(true) as HTMLElement;
+    const previewElement =
+      this.templateElement.content.firstElementChild!
+        .cloneNode(true) as HTMLElement;
 
-    // Кэшируем элементы через ensureElement
-    const imgEl      = ensureElement<HTMLImageElement>('.card__image',    preview);
-    const titleEl    = ensureElement<HTMLElement>     ('.card__title',    preview);
-    const descEl     = ensureElement<HTMLElement>     ('.card__text',     preview);
-    const priceEl    = ensureElement<HTMLElement>     ('.card__price',    preview);
-    const categoryEl = ensureElement<HTMLElement>     ('.card__category', preview);
-    const buyBtn     = ensureElement<HTMLButtonElement>('.card__button',   preview);
+    // Кэшируем все нужные подэлементы
+    const imageElement       = ensureElement<HTMLImageElement>('.card__image',    previewElement);
+    const titleElement       = ensureElement<HTMLElement>     ('.card__title',    previewElement);
+    const descriptionElement = ensureElement<HTMLElement>     ('.card__text',     previewElement);
+    const priceElement       = ensureElement<HTMLElement>     ('.card__price',    previewElement);
+    const categoryElement    = ensureElement<HTMLElement>     ('.card__category', previewElement);
+    const buttonElement      = ensureElement<HTMLButtonElement>('.card__button',   previewElement);
 
-    // Устанавливаем картинку и alt (product.image уже содержит полный URL)
-    this.setImage(imgEl, product.image, product.title);
+    // Корректное склеивание URL изображения
+    const imageUrl = product.image.startsWith('http')
+      ? product.image
+      : `${CDN_URL.replace(/\/+$/, '')}/${product.image.replace(/^\/+/, '')}`;
+    this.setImage(imageElement, imageUrl, product.title);
 
     // Заполняем текстовые поля
-    this.setText(titleEl, product.title);
-    this.setText(descEl, product.description);
+    this.setText(titleElement, product.title);
+    this.setText(descriptionElement, product.description);
     this.setText(
-      priceEl,
-      product.price !== null ? `${product.price} синапсов` : 'Бесценно'
+      priceElement,
+      product.price !== null
+        ? `${product.price} синапсов`
+        : 'Бесценно'
     );
-    this.setText(categoryEl, product.category);
 
-    // Устанавливаем CSS-класс для категории
+    // Устанавливаем категорию и цветовой класс
+    this.setText(categoryElement, product.category);
     this.toggleClass(
-      categoryEl,
-      categoryMapping[product.category] ?? '',
+      categoryElement,
+      categoryMapping[product.category] ?? 'card__category_other',
       true
     );
 
-    // Обновление текста кнопки в зависимости от состояния корзины
-    const updateButton = () => {
+    // Функция для обновления текста кнопки
+    const updateButtonText = (): void => {
       const inCart = this.state.getState().basket.includes(product.id);
-      this.setText(buyBtn, inCart ? 'Удалить из корзины' : 'В корзину');
+      this.setText(buttonElement, inCart ? 'Удалить из корзины' : 'В корзину');
     };
 
     if (product.price === null) {
-      this.setDisabled(buyBtn, true);
-      this.setText(buyBtn, 'Нет в наличии');
+      // Если товара нет в наличии
+      this.setDisabled(buttonElement, true);
+      this.setText(buttonElement, 'Нет в наличии');
     } else {
-      updateButton();
-      buyBtn.addEventListener('click', e => {
-        e.stopPropagation();
+      updateButtonText();
+      buttonElement.addEventListener('click', event => {
+        event.stopPropagation();
         const inCart = this.state.getState().basket.includes(product.id);
         this.events.emit(
           inCart
@@ -80,10 +87,10 @@ export class ProductPreviewView extends Component {
             : AppEvent.ORDER_ADD_PRODUCT,
           product.id
         );
-        updateButton();
+        updateButtonText();
       });
     }
 
-    return preview;
+    return previewElement;
   }
 }

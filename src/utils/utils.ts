@@ -84,3 +84,16 @@ export function createElement<
     }
     return element;
 }
+
+/**
+ * Клонирует <template> и возвращает первый элемент его контента.
+ * @param query Селектор шаблона или сам HTMLTemplateElement
+ */
+export function cloneTemplate<T extends HTMLElement>(
+  query: string | HTMLTemplateElement
+): T {
+  const template = ensureElement<HTMLTemplateElement>(query);
+  return template.content
+    .firstElementChild!
+    .cloneNode(true) as T;
+}
